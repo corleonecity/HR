@@ -1562,8 +1562,174 @@ async function saveGpSubmitRole() {
 }
 
 // ==========================================
-// 11. SAVED MESSAGES FUNCTIONS
+// 11. SAVED MESSAGES FUNCTIONS (WITH IMAGES & MULTIPLE EMBEDS)
 // ==========================================
+
+let messageSelectedImages = [];
+let currentEditingMessageId = null;
+let messageImageFiles = []; // Store actual File objects for images
+
+function updateMessageImagePreview() {
+    const previewContainer = document.getElementById('messageImagePreview');
+    const countSpan = document.getElementById('messageImageCount');
+    
+    if (!previewContainer) return;
+    previewContainer.innerHTML = '';
+    
+    if (countSpan) {
+        countSpan.textContent = `${messageImageFiles.length} / 5 image(s) selected`;
+        countSpan.style.color = messageImageFiles.length === 5 ? '#f56565' : '#888';
+    }
+    
+    messageImageFiles.forEach((file, index) => {
+        const box = document.createElement('div');
+        box.className = 'preview-box';
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.width = '60px';
+        img.style.height = '60px';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+        const btn = document.createElement('button');
+        btn.className = 'remove-img-btn';
+        btn.innerHTML = '&times;';
+        btn.onclick = () => {
+            messageImageFiles.splice(index, 1);
+            updateMessageImagePreview();
+        };
+        box.appendChild(img);
+        box.appendChild(btn);
+        previewContainer.appendChild(box);
+    });
+}
+
+// Store images as URLs (using Cloudflare R2 or Imgur would be better)
+// For now, we store as base64 - but be careful with Firebase size limits
+async function imagesToBase64(files) {
+    const results = [];
+    for (const file of files) {
+        const reader = new FileReader();
+        const base64 = await new Promise((resolve) => {
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+        results.push({
+            filename: file.name,
+            data: base64,
+            contentType: file.type,
+            size: file.size
+        });
+    }
+    return results;
+}
+
+// Convert base64 back to File objects for sending
+async function base64ToFiles(base64Images) {
+    const files = [];
+    for (let i = 0; i < base64Images.length; i++) {
+        const img = base64Images[i];
+        const response = await fetch(img.data);
+        const blob = await response.blob();
+        files.push(new File([blob], img.filename || `image_${i+1}.png`, { type: img.contentType || 'image/png' }));
+    }
+    return files;
+}
+
+function getEmbedsFromForm() {
+    const embedItems = document.querySelectorAll('.embed-item');
+    const embeds = [];
+    
+    embedItems.forEach((item, idx) => {
+        const title = item.querySelector('.embed-title')?.value.trim();
+        const description = item.querySelector('.embed-description')?.value.trim();
+        const color = item.querySelector('.embed-color')?.value || '#5865F2';
+        const url = item.querySelector('.embed-url')?.value.trim();
+        
+        // Only add embed if it has title OR description
+        if (title || description) {
+            const embed = {
+                color: parseInt(color.replace('#', ''), 16)
+            };
+            if (title) embed.title = title;
+            if (description) embed.description = description;
+            if (url) embed.url = url;
+            embeds.push(embed);
+        }
+    });
+    
+    return embeds;
+}
+
+function addEmbedField(embedData = null) {
+    const container = document.getElementById('embedsContainer');
+    if (!container) return;
+    
+    const currentCount = document.querySelectorAll('.embed-item').length;
+    if (currentCount >= 10) {
+        showNotify("Maximum 10 embeds per message!", "warning");
+        return;
+    }
+    
+    const embedIndex = currentCount;
+    const embedDiv = document.createElement('div');
+    embedDiv.className = 'embed-item';
+    embedDiv.setAttribute('data-embed-index', embedIndex);
+    embedDiv.style.background = '#0a0a0a';
+    embedDiv.style.border = '1px solid #333';
+    embedDiv.style.borderRadius = '8px';
+    embedDiv.style.padding = '15px';
+    embedDiv.style.marginBottom = '15px';
+    
+    embedDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <strong style="color: #ffd700;">Embed #${embedIndex + 1}</strong>
+            <button type="button" class="remove-embed-btn" style="background: #f56565; border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer;">Remove</button>
+        </div>
+        <input type="text" class="embed-title" placeholder="Embed Title" style="margin-bottom: 8px;" value="${embedData?.title || ''}">
+        <textarea class="embed-description" rows="3" placeholder="Embed Description" style="margin-bottom: 8px;">${embedData?.description || ''}</textarea>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <label style="color: #aaa;">Color:</label>
+            <input type="color" class="embed-color" value="${embedData?.color || '#5865F2'}" style="width: 60px; height: 40px;">
+            <input type="text" class="embed-url" placeholder="URL (optional)" style="flex: 1;" value="${embedData?.url || ''}">
+        </div>
+    `;
+    
+    const removeBtn = embedDiv.querySelector('.remove-embed-btn');
+    removeBtn.addEventListener('click', () => {
+        embedDiv.remove();
+        // Re-index remaining embeds
+        document.querySelectorAll('.embed-item').forEach((item, idx) => {
+            item.setAttribute('data-embed-index', idx);
+            const titleSpan = item.querySelector('strong');
+            if (titleSpan) titleSpan.textContent = `Embed #${idx + 1}`;
+        });
+    });
+    
+    container.appendChild(embedDiv);
+}
+
+function loadEmbedsIntoForm(embeds) {
+    const container = document.getElementById('embedsContainer');
+    if (!container) return;
+    
+    // Clear existing embeds
+    container.innerHTML = '';
+    
+    if (!embeds || embeds.length === 0) {
+        // Add one empty embed as default
+        addEmbedField();
+        return;
+    }
+    
+    embeds.forEach(embed => {
+        addEmbedField({
+            title: embed.title || '',
+            description: embed.description || '',
+            color: embed.color ? `#${embed.color.toString(16).padStart(6, '0')}` : '#5865F2',
+            url: embed.url || ''
+        });
+    });
+}
 
 async function loadSavedMessages() {
     const messagesRef = ref(db, 'saved_messages');
@@ -1581,6 +1747,8 @@ async function loadSavedMessages() {
         container.innerHTML = '';
         Object.entries(data).forEach(([id, msg]) => {
             const previewContent = msg.content ? (msg.content.substring(0, 100) + (msg.content.length > 100 ? '...' : '')) : 'No content';
+            const embedCount = msg.embeds ? msg.embeds.length : 0;
+            const imageCount = msg.images ? msg.images.length : 0;
             const messageIdDisplay = msg.discordMessageId ? `✅ Message ID: ${msg.discordMessageId.substring(0, 8)}...` : '⚠️ Not sent yet';
             
             container.innerHTML += `
@@ -1591,8 +1759,9 @@ async function loadSavedMessages() {
                         ${messageIdDisplay}
                     </div>
                     <div class="message-preview">
-                        <strong>Message:</strong> ${escapeHtml(previewContent)}
-                        ${msg.embedTitle ? `<br><strong>Embed:</strong> ${escapeHtml(msg.embedTitle)}` : ''}
+                        <strong>Text:</strong> ${escapeHtml(previewContent)}<br>
+                        <strong>📦 Embeds:</strong> ${embedCount}<br>
+                        <strong>📷 Images:</strong> ${imageCount}
                     </div>
                     <div class="message-actions">
                         <button class="btn-edit-message" onclick="editSavedMessage('${id}')">✏️ Edit</button>
@@ -1615,17 +1784,22 @@ window.editSavedMessage = async (id) => {
     const messageName = document.getElementById('messageName');
     const messageChannelId = document.getElementById('messageChannelId');
     const messageContent = document.getElementById('messageContent');
-    const messageEmbedTitle = document.getElementById('messageEmbedTitle');
-    const messageEmbedDesc = document.getElementById('messageEmbedDesc');
-    const messageEmbedColor = document.getElementById('messageEmbedColor');
     const saveBtn = document.getElementById('saveMessageBtn');
     
     if (messageName) messageName.value = msg.name || '';
     if (messageChannelId) messageChannelId.value = msg.channelId || '';
     if (messageContent) messageContent.value = msg.content || '';
-    if (messageEmbedTitle) messageEmbedTitle.value = msg.embedTitle || '';
-    if (messageEmbedDesc) messageEmbedDesc.value = msg.embedDesc || '';
-    if (messageEmbedColor && msg.embedColor) messageEmbedColor.value = msg.embedColor;
+    
+    // Clear current images
+    messageImageFiles = [];
+    updateMessageImagePreview();
+    
+    // Load embeds into form
+    if (msg.embeds && msg.embeds.length > 0) {
+        loadEmbedsIntoForm(msg.embeds);
+    } else {
+        loadEmbedsIntoForm([]);
+    }
     
     if (saveBtn) {
         saveBtn.textContent = '✏️ Update Message';
@@ -1639,9 +1813,7 @@ async function saveMessage() {
     const name = document.getElementById('messageName')?.value.trim();
     const channelId = document.getElementById('messageChannelId')?.value.trim();
     const content = document.getElementById('messageContent')?.value;
-    const embedTitle = document.getElementById('messageEmbedTitle')?.value;
-    const embedDesc = document.getElementById('messageEmbedDesc')?.value;
-    const embedColor = document.getElementById('messageEmbedColor')?.value;
+    const embeds = getEmbedsFromForm();
     
     if (!name) {
         showNotify("Please enter a message name!", "error");
@@ -1653,13 +1825,18 @@ async function saveMessage() {
         return;
     }
     
+    // Convert images to base64 for storage
+    let images = [];
+    if (messageImageFiles.length > 0) {
+        images = await imagesToBase64(messageImageFiles);
+    }
+    
     const messageData = {
         name: name,
         channelId: channelId,
         content: content || '',
-        embedTitle: embedTitle || '',
-        embedDesc: embedDesc || '',
-        embedColor: embedColor || '#5865F2',
+        embeds: embeds,
+        images: images,
         updatedAt: Date.now(),
         updatedBy: currentUser?.id
     };
@@ -1687,20 +1864,7 @@ async function saveMessage() {
         }
         
         // Clear form
-        const messageName = document.getElementById('messageName');
-        const messageChannelId = document.getElementById('messageChannelId');
-        const messageContent = document.getElementById('messageContent');
-        const messageEmbedTitle = document.getElementById('messageEmbedTitle');
-        const messageEmbedDesc = document.getElementById('messageEmbedDesc');
-        const messageEmbedColor = document.getElementById('messageEmbedColor');
-        
-        if (messageName) messageName.value = '';
-        if (messageChannelId) messageChannelId.value = '';
-        if (messageContent) messageContent.value = '';
-        if (messageEmbedTitle) messageEmbedTitle.value = '';
-        if (messageEmbedDesc) messageEmbedDesc.value = '';
-        if (messageEmbedColor) messageEmbedColor.value = '#5865F2';
-        
+        clearMessageForm();
         loadSavedMessages();
     } catch (e) {
         console.error("Error saving message:", e);
@@ -1718,22 +1882,23 @@ window.sendSavedMessage = async (id) => {
         return;
     }
     
-    let embeds = null;
-    if (msg.embedTitle || msg.embedDesc) {
-        embeds = [{
-            title: msg.embedTitle || undefined,
-            description: msg.embedDesc || undefined,
-            color: msg.embedColor ? parseInt(msg.embedColor.replace('#', ''), 16) : 0x5865F2,
-            timestamp: new Date().toISOString()
-        }];
-    }
-    
     showNotify(`Sending "${msg.name}"...`, "warning");
+    
+    // Build message payload
+    const payload = {
+        channelId: msg.channelId,
+        content: msg.content || null,
+        embeds: msg.embeds && msg.embeds.length > 0 ? msg.embeds : null
+    };
     
     let storedMessageId = msg.discordMessageId;
     let success = false;
     
-    if (storedMessageId) {
+    // If we have images, we need to use FormData
+    const hasImages = msg.images && msg.images.length > 0;
+    
+    if (storedMessageId && !hasImages) {
+        // Try to update existing message (only works for text/embeds, not for images)
         try {
             const response = await fetch(`${BACKEND_URL}/update-message`, {
                 method: 'POST',
@@ -1741,8 +1906,8 @@ window.sendSavedMessage = async (id) => {
                 body: JSON.stringify({ 
                     channelId: msg.channelId, 
                     messageId: storedMessageId, 
-                    content: msg.content, 
-                    embeds: embeds 
+                    content: payload.content, 
+                    embeds: payload.embeds 
                 })
             });
             
@@ -1761,12 +1926,37 @@ window.sendSavedMessage = async (id) => {
         }
     }
     
-    if (!storedMessageId) {
-        const newMsgResponse = await fetch(`${BACKEND_URL}/send-channel-message`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channelId: msg.channelId, content: msg.content, embeds: embeds })
-        });
+    if (!storedMessageId || hasImages) {
+        // Send new message (with optional images via FormData)
+        let newMsgResponse;
+        
+        if (hasImages) {
+            // Convert stored base64 images back to blobs
+            const formData = new FormData();
+            formData.append('payload_json', JSON.stringify({
+                content: payload.content,
+                embeds: payload.embeds
+            }));
+            
+            for (let i = 0; i < msg.images.length && i < 5; i++) {
+                const img = msg.images[i];
+                // Convert base64 to blob
+                const base64Response = await fetch(img.data);
+                const blob = await base64Response.blob();
+                formData.append(`file${i}`, blob, img.filename || `image_${i+1}.png`);
+            }
+            
+            newMsgResponse = await fetch(`${BACKEND_URL}/send-gp-request-with-buttons`, {
+                method: 'POST',
+                body: formData
+            });
+        } else {
+            newMsgResponse = await fetch(`${BACKEND_URL}/send-channel-message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
         
         if (newMsgResponse.ok) {
             const newMsgData = await newMsgResponse.json();
@@ -1782,6 +1972,8 @@ window.sendSavedMessage = async (id) => {
                 showNotify(`Message "${msg.name}" sent successfully!`, "success");
             }
         } else {
+            const errorText = await newMsgResponse.text();
+            console.error("Send failed:", errorText);
             success = false;
         }
     }
@@ -1810,17 +2002,22 @@ function clearMessageForm() {
     const messageName = document.getElementById('messageName');
     const messageChannelId = document.getElementById('messageChannelId');
     const messageContent = document.getElementById('messageContent');
-    const messageEmbedTitle = document.getElementById('messageEmbedTitle');
-    const messageEmbedDesc = document.getElementById('messageEmbedDesc');
-    const messageEmbedColor = document.getElementById('messageEmbedColor');
     const saveBtn = document.getElementById('saveMessageBtn');
     
     if (messageName) messageName.value = '';
     if (messageChannelId) messageChannelId.value = '';
     if (messageContent) messageContent.value = '';
-    if (messageEmbedTitle) messageEmbedTitle.value = '';
-    if (messageEmbedDesc) messageEmbedDesc.value = '';
-    if (messageEmbedColor) messageEmbedColor.value = '#5865F2';
+    
+    // Clear images
+    messageImageFiles = [];
+    updateMessageImagePreview();
+    
+    // Reset embeds to single default
+    const container = document.getElementById('embedsContainer');
+    if (container) {
+        container.innerHTML = '';
+        addEmbedField(); // Add one default embed
+    }
     
     if (saveBtn) {
         saveBtn.textContent = '💾 Save Message';
@@ -1830,11 +2027,26 @@ function clearMessageForm() {
     showNotify("Form cleared!", "success");
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function initMessageImageUpload() {
+    const messageImagesInput = document.getElementById('messageImages');
+    if (messageImagesInput) {
+        messageImagesInput.addEventListener('change', (e) => {
+            const newFiles = Array.from(e.target.files);
+            const maxImages = 5;
+            if (messageImageFiles.length + newFiles.length > maxImages) {
+                showNotify(`Maximum ${maxImages} images allowed!`, "warning");
+                return;
+            }
+            messageImageFiles = messageImageFiles.concat(newFiles);
+            updateMessageImagePreview();
+            e.target.value = '';
+        });
+    }
+    
+    const addEmbedBtn = document.getElementById('addEmbedBtn');
+    if (addEmbedBtn) {
+        addEmbedBtn.addEventListener('click', () => addEmbedField());
+    }
 }
 
 // ==========================================
