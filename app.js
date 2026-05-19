@@ -21,7 +21,7 @@ let systemConfig = {
         leaderboard: '#ffd700'
     },
     limits: {
-        maxImagesPerRequest: 3
+        maxImagesPerRequest: 3  // Erhöht auf 3 Bilder
     },
     musicUrl: 'https://www.youtube.com/watch?v=3Ion7Vwt0Y8&list=RD3Ion7Vwt0Y8&start_radio=1',
     updateInterval: 60
@@ -64,9 +64,6 @@ let selectedFiles = [];
 let allUsersData = {};
 let liveCheckInterval = null;
 let userGuildRoles = [];
-
-// Saved Messages specific
-let messageImageFiles = [];
 let currentEditingMessageId = null;
 
 // ==========================================
@@ -379,8 +376,12 @@ async function updateBotStatus() {
     }
 }
 
+// ==========================================
+// KORRIGIERTE updateDiscordNickname FUNKTION
+// ==========================================
 async function updateDiscordNickname(userId, robloxName, robloxUsername) {
     try {
+        // Wenn robloxName und robloxUsername gleich sind, zeige nur einen
         let newNickname;
         if (robloxName === robloxUsername) {
             newNickname = robloxName;
@@ -388,6 +389,7 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
             newNickname = `${robloxName} (@${robloxUsername})`;
         }
         
+        // Nickname auf max. 32 Zeichen begrenzen (Discord Limit)
         if (newNickname.length > 32) {
             newNickname = newNickname.substring(0, 29) + '...';
         }
@@ -562,7 +564,7 @@ async function sendGPRequestToDiscord(requestData, images) {
 }
 
 // ==========================================
-// 5. DISCORD & ROBLOX AUTHENTIFICATION
+// 5. DISCORD & ROBLOX AUTHENTIFICATION (KORRIGIERT)
 // ==========================================
 
 async function doLiveCheck() {
@@ -643,6 +645,7 @@ async function handleDiscordLogin(code) {
     }
 }
 
+// KORRIGIERTE handleRobloxLogin Funktion
 async function handleRobloxLogin(code) {
     try {
         showLoading(true, 'robloxLoginBtn');
@@ -672,6 +675,9 @@ async function handleRobloxLogin(code) {
         }
         
         if (data.success && data.robloxUser) {
+            // KORRIGIERT: Roblox Name und Username separat speichern
+            // name = Display Name (z.B. "TTcolinrbx")
+            // preferred_username = Username (z.B. "lisa_qwq18")
             const rDisplayName = data.robloxUser.name || data.robloxUser.preferred_username || "Unknown";
             const rUsername = data.robloxUser.preferred_username || data.robloxUser.name || "Unknown";
             const rId = data.robloxUser.sub;
@@ -694,6 +700,7 @@ async function handleRobloxLogin(code) {
                 linkedAt: Date.now()
             });
 
+            // Nickname mit korrekten Werten aktualisieren
             await updateDiscordNickname(currentUser.id, rDisplayName, rUsername);
 
             await sendLoginWebhook({
@@ -1074,12 +1081,14 @@ function loadAdminData() {
                         <span class="display-name">${escapeHtml(req.discordName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.discordUsername || "Unknown")}</span>
                     </div>
+                 </div>
                 </td>
                 <td>
                     <div class="user-name-cell">
                         <span class="display-name">${escapeHtml(req.robloxName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.robloxUsername || "Unknown")}</span>
                     </div>
+                 </div>
                 </td>
                 <td style="color:#cd7f32; font-weight:bold;">+${req.amount.toLocaleString()} GP</td>
                 <td>
@@ -1094,6 +1103,7 @@ function loadAdminData() {
                             </button>
                         </div>
                     </div>
+                 </div>
                 </td>
             `;
             body.appendChild(row);
@@ -1160,6 +1170,7 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
             }
         }
 
+        // 🔁 Discord-Nachricht aktualisieren (Bilder bleiben erhalten)
         try {
             const panelActionRes = await fetch(`${BACKEND_URL}/panel-action`, {
                 method: 'POST',
@@ -1224,12 +1235,13 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
         alert("Error: " + e.message);
     } finally {
         if (btn) btn.disabled = false;
+        // Refresh admin table
         loadAdminData();
     }
 };
 
 // ==========================================
-// 10. OWNER PANEL FUNCTIONS (roles, channels, etc.)
+// 10. OWNER PANEL FUNCTIONS
 // ==========================================
 
 async function loadAdminRolesList() {
@@ -1251,7 +1263,7 @@ async function loadAdminRolesList() {
             html += `<tr><td class="role-name">${escapeHtml(roleName)}</td><td class="role-id">${escapeHtml(role)}</td><td><span class="status-badge status-pending">Owner</span></td><td><button class="btn-small btn-remove-role" onclick="removeOwnerRole('${role}')">Remove</button></td></tr>`;
         }
         
-        html += '</tbody></table>';
+        html += '</tbody></tr>';
         container.innerHTML = html;
     } catch (e) {
         console.error("Error loading roles:", e);
@@ -1550,152 +1562,8 @@ async function saveGpSubmitRole() {
 }
 
 // ==========================================
-// 11. SAVED MESSAGES FUNCTIONS (with images & multiple embeds)
+// 11. SAVED MESSAGES FUNCTIONS
 // ==========================================
-
-function updateMessageImagePreview() {
-    const previewContainer = document.getElementById('messageImagePreview');
-    const countSpan = document.getElementById('messageImageCount');
-    
-    if (!previewContainer) return;
-    previewContainer.innerHTML = '';
-    
-    if (countSpan) {
-        countSpan.textContent = `${messageImageFiles.length} / 5 image(s) selected`;
-        countSpan.style.color = messageImageFiles.length === 5 ? '#f56565' : '#888';
-    }
-    
-    messageImageFiles.forEach((file, index) => {
-        const box = document.createElement('div');
-        box.className = 'preview-box';
-        const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
-        img.style.width = '60px';
-        img.style.height = '60px';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '8px';
-        const btn = document.createElement('button');
-        btn.className = 'remove-img-btn';
-        btn.innerHTML = '&times;';
-        btn.onclick = () => {
-            messageImageFiles.splice(index, 1);
-            updateMessageImagePreview();
-        };
-        box.appendChild(img);
-        box.appendChild(btn);
-        previewContainer.appendChild(box);
-    });
-}
-
-async function imagesToBase64(files) {
-    const results = [];
-    for (const file of files) {
-        const reader = new FileReader();
-        const base64 = await new Promise((resolve) => {
-            reader.onload = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-        });
-        results.push({
-            filename: file.name,
-            data: base64,
-            contentType: file.type,
-            size: file.size
-        });
-    }
-    return results;
-}
-
-function getEmbedsFromForm() {
-    const embedItems = document.querySelectorAll('.embed-item');
-    const embeds = [];
-    
-    embedItems.forEach((item) => {
-        const title = item.querySelector('.embed-title')?.value.trim();
-        const description = item.querySelector('.embed-description')?.value.trim();
-        const color = item.querySelector('.embed-color')?.value || '#5865F2';
-        const url = item.querySelector('.embed-url')?.value.trim();
-        
-        if (title || description) {
-            const embed = {
-                color: parseInt(color.replace('#', ''), 16)
-            };
-            if (title) embed.title = title;
-            if (description) embed.description = description;
-            if (url) embed.url = url;
-            embeds.push(embed);
-        }
-    });
-    
-    return embeds;
-}
-
-function addEmbedField(embedData = null) {
-    const container = document.getElementById('embedsContainer');
-    if (!container) return;
-    
-    const currentCount = document.querySelectorAll('.embed-item').length;
-    if (currentCount >= 10) {
-        showNotify("Maximum 10 embeds per message!", "warning");
-        return;
-    }
-    
-    const embedIndex = currentCount;
-    const embedDiv = document.createElement('div');
-    embedDiv.className = 'embed-item';
-    embedDiv.setAttribute('data-embed-index', embedIndex);
-    embedDiv.style.background = '#0a0a0a';
-    embedDiv.style.border = '1px solid #333';
-    embedDiv.style.borderRadius = '8px';
-    embedDiv.style.padding = '15px';
-    embedDiv.style.marginBottom = '15px';
-    
-    embedDiv.innerHTML = `
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <strong style="color: #ffd700;">Embed #${embedIndex + 1}</strong>
-            <button type="button" class="remove-embed-btn" style="background: #f56565; border: none; color: white; padding: 4px 10px; border-radius: 6px; cursor: pointer;">Remove</button>
-        </div>
-        <input type="text" class="embed-title" placeholder="Embed Title" style="margin-bottom: 8px;" value="${embedData?.title || ''}">
-        <textarea class="embed-description" rows="3" placeholder="Embed Description" style="margin-bottom: 8px;">${embedData?.description || ''}</textarea>
-        <div style="display: flex; gap: 10px; align-items: center;">
-            <label style="color: #aaa;">Color:</label>
-            <input type="color" class="embed-color" value="${embedData?.color || '#5865F2'}" style="width: 60px; height: 40px;">
-            <input type="text" class="embed-url" placeholder="URL (optional)" style="flex: 1;" value="${embedData?.url || ''}">
-        </div>
-    `;
-    
-    const removeBtn = embedDiv.querySelector('.remove-embed-btn');
-    removeBtn.addEventListener('click', () => {
-        embedDiv.remove();
-        document.querySelectorAll('.embed-item').forEach((item, idx) => {
-            item.setAttribute('data-embed-index', idx);
-            const titleSpan = item.querySelector('strong');
-            if (titleSpan) titleSpan.textContent = `Embed #${idx + 1}`;
-        });
-    });
-    
-    container.appendChild(embedDiv);
-}
-
-function loadEmbedsIntoForm(embeds) {
-    const container = document.getElementById('embedsContainer');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (!embeds || embeds.length === 0) {
-        addEmbedField();
-        return;
-    }
-    
-    embeds.forEach(embed => {
-        addEmbedField({
-            title: embed.title || '',
-            description: embed.description || '',
-            color: embed.color ? `#${embed.color.toString(16).padStart(6, '0')}` : '#5865F2',
-            url: embed.url || ''
-        });
-    });
-}
 
 async function loadSavedMessages() {
     const messagesRef = ref(db, 'saved_messages');
@@ -1713,8 +1581,6 @@ async function loadSavedMessages() {
         container.innerHTML = '';
         Object.entries(data).forEach(([id, msg]) => {
             const previewContent = msg.content ? (msg.content.substring(0, 100) + (msg.content.length > 100 ? '...' : '')) : 'No content';
-            const embedCount = msg.embeds ? msg.embeds.length : 0;
-            const imageCount = msg.images ? msg.images.length : 0;
             const messageIdDisplay = msg.discordMessageId ? `✅ Message ID: ${msg.discordMessageId.substring(0, 8)}...` : '⚠️ Not sent yet';
             
             container.innerHTML += `
@@ -1725,9 +1591,8 @@ async function loadSavedMessages() {
                         ${messageIdDisplay}
                     </div>
                     <div class="message-preview">
-                        <strong>Text:</strong> ${escapeHtml(previewContent)}<br>
-                        <strong>📦 Embeds:</strong> ${embedCount}<br>
-                        <strong>📷 Images:</strong> ${imageCount}
+                        <strong>Message:</strong> ${escapeHtml(previewContent)}
+                        ${msg.embedTitle ? `<br><strong>Embed:</strong> ${escapeHtml(msg.embedTitle)}` : ''}
                     </div>
                     <div class="message-actions">
                         <button class="btn-edit-message" onclick="editSavedMessage('${id}')">✏️ Edit</button>
@@ -1747,20 +1612,21 @@ window.editSavedMessage = async (id) => {
     
     currentEditingMessageId = id;
     
-    document.getElementById('messageName').value = msg.name || '';
-    document.getElementById('messageChannelId').value = msg.channelId || '';
-    document.getElementById('messageContent').value = msg.content || '';
-    
-    messageImageFiles = [];
-    updateMessageImagePreview();
-    
-    if (msg.embeds && msg.embeds.length > 0) {
-        loadEmbedsIntoForm(msg.embeds);
-    } else {
-        loadEmbedsIntoForm([]);
-    }
-    
+    const messageName = document.getElementById('messageName');
+    const messageChannelId = document.getElementById('messageChannelId');
+    const messageContent = document.getElementById('messageContent');
+    const messageEmbedTitle = document.getElementById('messageEmbedTitle');
+    const messageEmbedDesc = document.getElementById('messageEmbedDesc');
+    const messageEmbedColor = document.getElementById('messageEmbedColor');
     const saveBtn = document.getElementById('saveMessageBtn');
+    
+    if (messageName) messageName.value = msg.name || '';
+    if (messageChannelId) messageChannelId.value = msg.channelId || '';
+    if (messageContent) messageContent.value = msg.content || '';
+    if (messageEmbedTitle) messageEmbedTitle.value = msg.embedTitle || '';
+    if (messageEmbedDesc) messageEmbedDesc.value = msg.embedDesc || '';
+    if (messageEmbedColor && msg.embedColor) messageEmbedColor.value = msg.embedColor;
+    
     if (saveBtn) {
         saveBtn.textContent = '✏️ Update Message';
         saveBtn.style.background = '#ffd700';
@@ -1773,7 +1639,9 @@ async function saveMessage() {
     const name = document.getElementById('messageName')?.value.trim();
     const channelId = document.getElementById('messageChannelId')?.value.trim();
     const content = document.getElementById('messageContent')?.value;
-    const embeds = getEmbedsFromForm();
+    const embedTitle = document.getElementById('messageEmbedTitle')?.value;
+    const embedDesc = document.getElementById('messageEmbedDesc')?.value;
+    const embedColor = document.getElementById('messageEmbedColor')?.value;
     
     if (!name) {
         showNotify("Please enter a message name!", "error");
@@ -1785,17 +1653,13 @@ async function saveMessage() {
         return;
     }
     
-    let images = [];
-    if (messageImageFiles.length > 0) {
-        images = await imagesToBase64(messageImageFiles);
-    }
-    
     const messageData = {
         name: name,
         channelId: channelId,
         content: content || '',
-        embeds: embeds,
-        images: images,
+        embedTitle: embedTitle || '',
+        embedDesc: embedDesc || '',
+        embedColor: embedColor || '#5865F2',
         updatedAt: Date.now(),
         updatedBy: currentUser?.id
     };
@@ -1822,7 +1686,21 @@ async function saveMessage() {
             showNotify(`Message "${name}" saved successfully!`, "success");
         }
         
-        clearMessageForm();
+        // Clear form
+        const messageName = document.getElementById('messageName');
+        const messageChannelId = document.getElementById('messageChannelId');
+        const messageContent = document.getElementById('messageContent');
+        const messageEmbedTitle = document.getElementById('messageEmbedTitle');
+        const messageEmbedDesc = document.getElementById('messageEmbedDesc');
+        const messageEmbedColor = document.getElementById('messageEmbedColor');
+        
+        if (messageName) messageName.value = '';
+        if (messageChannelId) messageChannelId.value = '';
+        if (messageContent) messageContent.value = '';
+        if (messageEmbedTitle) messageEmbedTitle.value = '';
+        if (messageEmbedDesc) messageEmbedDesc.value = '';
+        if (messageEmbedColor) messageEmbedColor.value = '#5865F2';
+        
         loadSavedMessages();
     } catch (e) {
         console.error("Error saving message:", e);
@@ -1840,19 +1718,22 @@ window.sendSavedMessage = async (id) => {
         return;
     }
     
-    showNotify(`Sending "${msg.name}"...`, "warning");
+    let embeds = null;
+    if (msg.embedTitle || msg.embedDesc) {
+        embeds = [{
+            title: msg.embedTitle || undefined,
+            description: msg.embedDesc || undefined,
+            color: msg.embedColor ? parseInt(msg.embedColor.replace('#', ''), 16) : 0x5865F2,
+            timestamp: new Date().toISOString()
+        }];
+    }
     
-    const payload = {
-        channelId: msg.channelId,
-        content: msg.content || null,
-        embeds: msg.embeds && msg.embeds.length > 0 ? msg.embeds : null
-    };
+    showNotify(`Sending "${msg.name}"...`, "warning");
     
     let storedMessageId = msg.discordMessageId;
     let success = false;
-    const hasImages = msg.images && msg.images.length > 0;
     
-    if (storedMessageId && !hasImages) {
+    if (storedMessageId) {
         try {
             const response = await fetch(`${BACKEND_URL}/update-message`, {
                 method: 'POST',
@@ -1860,8 +1741,8 @@ window.sendSavedMessage = async (id) => {
                 body: JSON.stringify({ 
                     channelId: msg.channelId, 
                     messageId: storedMessageId, 
-                    content: payload.content, 
-                    embeds: payload.embeds 
+                    content: msg.content, 
+                    embeds: embeds 
                 })
             });
             
@@ -1869,43 +1750,23 @@ window.sendSavedMessage = async (id) => {
                 success = true;
                 showNotify(`Message "${msg.name}" updated successfully!`, "success");
             } else if (response.status === 404) {
+                console.log("Message not found, sending new one");
                 storedMessageId = null;
             } else {
                 storedMessageId = null;
             }
         } catch (e) {
+            console.error("Update failed, sending new message:", e);
             storedMessageId = null;
         }
     }
     
-    if (!storedMessageId || hasImages) {
-        let newMsgResponse;
-        
-        if (hasImages) {
-            const formData = new FormData();
-            formData.append('payload_json', JSON.stringify({
-                content: payload.content,
-                embeds: payload.embeds
-            }));
-            
-            for (let i = 0; i < msg.images.length && i < 5; i++) {
-                const img = msg.images[i];
-                const base64Response = await fetch(img.data);
-                const blob = await base64Response.blob();
-                formData.append(`file${i}`, blob, img.filename || `image_${i+1}.png`);
-            }
-            
-            newMsgResponse = await fetch(`${BACKEND_URL}/send-gp-request-with-buttons`, {
-                method: 'POST',
-                body: formData
-            });
-        } else {
-            newMsgResponse = await fetch(`${BACKEND_URL}/send-channel-message`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-        }
+    if (!storedMessageId) {
+        const newMsgResponse = await fetch(`${BACKEND_URL}/send-channel-message`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId: msg.channelId, content: msg.content, embeds: embeds })
+        });
         
         if (newMsgResponse.ok) {
             const newMsgData = await newMsgResponse.json();
@@ -1946,48 +1807,27 @@ window.deleteSavedMessage = async (id) => {
 
 function clearMessageForm() {
     currentEditingMessageId = null;
-    document.getElementById('messageName').value = '';
-    document.getElementById('messageChannelId').value = '';
-    document.getElementById('messageContent').value = '';
-    
-    messageImageFiles = [];
-    updateMessageImagePreview();
-    
-    const container = document.getElementById('embedsContainer');
-    if (container) {
-        container.innerHTML = '';
-        addEmbedField();
-    }
-    
+    const messageName = document.getElementById('messageName');
+    const messageChannelId = document.getElementById('messageChannelId');
+    const messageContent = document.getElementById('messageContent');
+    const messageEmbedTitle = document.getElementById('messageEmbedTitle');
+    const messageEmbedDesc = document.getElementById('messageEmbedDesc');
+    const messageEmbedColor = document.getElementById('messageEmbedColor');
     const saveBtn = document.getElementById('saveMessageBtn');
+    
+    if (messageName) messageName.value = '';
+    if (messageChannelId) messageChannelId.value = '';
+    if (messageContent) messageContent.value = '';
+    if (messageEmbedTitle) messageEmbedTitle.value = '';
+    if (messageEmbedDesc) messageEmbedDesc.value = '';
+    if (messageEmbedColor) messageEmbedColor.value = '#5865F2';
+    
     if (saveBtn) {
         saveBtn.textContent = '💾 Save Message';
         saveBtn.style.background = '#48bb78';
     }
     
     showNotify("Form cleared!", "success");
-}
-
-function initMessageImageUpload() {
-    const messageImagesInput = document.getElementById('messageImages');
-    if (messageImagesInput) {
-        messageImagesInput.addEventListener('change', (e) => {
-            const newFiles = Array.from(e.target.files);
-            const maxImages = 5;
-            if (messageImageFiles.length + newFiles.length > maxImages) {
-                showNotify(`Maximum ${maxImages} images allowed!`, "warning");
-                return;
-            }
-            messageImageFiles = messageImageFiles.concat(newFiles);
-            updateMessageImagePreview();
-            e.target.value = '';
-        });
-    }
-    
-    const addEmbedBtn = document.getElementById('addEmbedBtn');
-    if (addEmbedBtn) {
-        addEmbedBtn.addEventListener('click', () => addEmbedField());
-    }
 }
 
 function escapeHtml(text) {
@@ -2128,7 +1968,6 @@ function initEventListeners() {
 
 function init() {
     initEventListeners();
-    initMessageImageUpload();
     
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
