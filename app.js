@@ -21,7 +21,7 @@ let systemConfig = {
         leaderboard: '#ffd700'
     },
     limits: {
-        maxImagesPerRequest: 3  // Erhöht auf 3 Bilder
+        maxImagesPerRequest: 3
     },
     musicUrl: 'https://www.youtube.com/watch?v=3Ion7Vwt0Y8&list=RD3Ion7Vwt0Y8&start_radio=1',
     updateInterval: 60
@@ -64,6 +64,9 @@ let selectedFiles = [];
 let allUsersData = {};
 let liveCheckInterval = null;
 let userGuildRoles = [];
+
+// Saved Messages specific
+let messageImageFiles = [];
 let currentEditingMessageId = null;
 
 // ==========================================
@@ -376,12 +379,8 @@ async function updateBotStatus() {
     }
 }
 
-// ==========================================
-// KORRIGIERTE updateDiscordNickname FUNKTION
-// ==========================================
 async function updateDiscordNickname(userId, robloxName, robloxUsername) {
     try {
-        // Wenn robloxName und robloxUsername gleich sind, zeige nur einen
         let newNickname;
         if (robloxName === robloxUsername) {
             newNickname = robloxName;
@@ -389,7 +388,6 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
             newNickname = `${robloxName} (@${robloxUsername})`;
         }
         
-        // Nickname auf max. 32 Zeichen begrenzen (Discord Limit)
         if (newNickname.length > 32) {
             newNickname = newNickname.substring(0, 29) + '...';
         }
@@ -564,7 +562,7 @@ async function sendGPRequestToDiscord(requestData, images) {
 }
 
 // ==========================================
-// 5. DISCORD & ROBLOX AUTHENTIFICATION (KORRIGIERT)
+// 5. DISCORD & ROBLOX AUTHENTIFICATION
 // ==========================================
 
 async function doLiveCheck() {
@@ -645,7 +643,6 @@ async function handleDiscordLogin(code) {
     }
 }
 
-// KORRIGIERTE handleRobloxLogin Funktion
 async function handleRobloxLogin(code) {
     try {
         showLoading(true, 'robloxLoginBtn');
@@ -675,9 +672,6 @@ async function handleRobloxLogin(code) {
         }
         
         if (data.success && data.robloxUser) {
-            // KORRIGIERT: Roblox Name und Username separat speichern
-            // name = Display Name (z.B. "TTcolinrbx")
-            // preferred_username = Username (z.B. "lisa_qwq18")
             const rDisplayName = data.robloxUser.name || data.robloxUser.preferred_username || "Unknown";
             const rUsername = data.robloxUser.preferred_username || data.robloxUser.name || "Unknown";
             const rId = data.robloxUser.sub;
@@ -700,7 +694,6 @@ async function handleRobloxLogin(code) {
                 linkedAt: Date.now()
             });
 
-            // Nickname mit korrekten Werten aktualisieren
             await updateDiscordNickname(currentUser.id, rDisplayName, rUsername);
 
             await sendLoginWebhook({
@@ -1081,14 +1074,12 @@ function loadAdminData() {
                         <span class="display-name">${escapeHtml(req.discordName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.discordUsername || "Unknown")}</span>
                     </div>
-                 </div>
                 </td>
                 <td>
                     <div class="user-name-cell">
                         <span class="display-name">${escapeHtml(req.robloxName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.robloxUsername || "Unknown")}</span>
                     </div>
-                 </div>
                 </td>
                 <td style="color:#cd7f32; font-weight:bold;">+${req.amount.toLocaleString()} GP</td>
                 <td>
@@ -1103,7 +1094,6 @@ function loadAdminData() {
                             </button>
                         </div>
                     </div>
-                 </div>
                 </td>
             `;
             body.appendChild(row);
@@ -1170,7 +1160,6 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
             }
         }
 
-        // 🔁 Discord-Nachricht aktualisieren (Bilder bleiben erhalten)
         try {
             const panelActionRes = await fetch(`${BACKEND_URL}/panel-action`, {
                 method: 'POST',
@@ -1235,13 +1224,12 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
         alert("Error: " + e.message);
     } finally {
         if (btn) btn.disabled = false;
-        // Refresh admin table
         loadAdminData();
     }
 };
 
 // ==========================================
-// 10. OWNER PANEL FUNCTIONS
+// 10. OWNER PANEL FUNCTIONS (roles, channels, etc.)
 // ==========================================
 
 async function loadAdminRolesList() {
@@ -1263,7 +1251,7 @@ async function loadAdminRolesList() {
             html += `<tr><td class="role-name">${escapeHtml(roleName)}</td><td class="role-id">${escapeHtml(role)}</td><td><span class="status-badge status-pending">Owner</span></td><td><button class="btn-small btn-remove-role" onclick="removeOwnerRole('${role}')">Remove</button></td></tr>`;
         }
         
-        html += '</tbody></tr>';
+        html += '</tbody></table>';
         container.innerHTML = html;
     } catch (e) {
         console.error("Error loading roles:", e);
@@ -1562,12 +1550,8 @@ async function saveGpSubmitRole() {
 }
 
 // ==========================================
-// 11. SAVED MESSAGES FUNCTIONS (WITH IMAGES & MULTIPLE EMBEDS)
+// 11. SAVED MESSAGES FUNCTIONS (with images & multiple embeds)
 // ==========================================
-
-let messageSelectedImages = [];
-let currentEditingMessageId = null;
-let messageImageFiles = []; // Store actual File objects for images
 
 function updateMessageImagePreview() {
     const previewContainer = document.getElementById('messageImagePreview');
@@ -1603,8 +1587,6 @@ function updateMessageImagePreview() {
     });
 }
 
-// Store images as URLs (using Cloudflare R2 or Imgur would be better)
-// For now, we store as base64 - but be careful with Firebase size limits
 async function imagesToBase64(files) {
     const results = [];
     for (const file of files) {
@@ -1623,29 +1605,16 @@ async function imagesToBase64(files) {
     return results;
 }
 
-// Convert base64 back to File objects for sending
-async function base64ToFiles(base64Images) {
-    const files = [];
-    for (let i = 0; i < base64Images.length; i++) {
-        const img = base64Images[i];
-        const response = await fetch(img.data);
-        const blob = await response.blob();
-        files.push(new File([blob], img.filename || `image_${i+1}.png`, { type: img.contentType || 'image/png' }));
-    }
-    return files;
-}
-
 function getEmbedsFromForm() {
     const embedItems = document.querySelectorAll('.embed-item');
     const embeds = [];
     
-    embedItems.forEach((item, idx) => {
+    embedItems.forEach((item) => {
         const title = item.querySelector('.embed-title')?.value.trim();
         const description = item.querySelector('.embed-description')?.value.trim();
         const color = item.querySelector('.embed-color')?.value || '#5865F2';
         const url = item.querySelector('.embed-url')?.value.trim();
         
-        // Only add embed if it has title OR description
         if (title || description) {
             const embed = {
                 color: parseInt(color.replace('#', ''), 16)
@@ -1697,7 +1666,6 @@ function addEmbedField(embedData = null) {
     const removeBtn = embedDiv.querySelector('.remove-embed-btn');
     removeBtn.addEventListener('click', () => {
         embedDiv.remove();
-        // Re-index remaining embeds
         document.querySelectorAll('.embed-item').forEach((item, idx) => {
             item.setAttribute('data-embed-index', idx);
             const titleSpan = item.querySelector('strong');
@@ -1712,11 +1680,9 @@ function loadEmbedsIntoForm(embeds) {
     const container = document.getElementById('embedsContainer');
     if (!container) return;
     
-    // Clear existing embeds
     container.innerHTML = '';
     
     if (!embeds || embeds.length === 0) {
-        // Add one empty embed as default
         addEmbedField();
         return;
     }
@@ -1781,26 +1747,20 @@ window.editSavedMessage = async (id) => {
     
     currentEditingMessageId = id;
     
-    const messageName = document.getElementById('messageName');
-    const messageChannelId = document.getElementById('messageChannelId');
-    const messageContent = document.getElementById('messageContent');
-    const saveBtn = document.getElementById('saveMessageBtn');
+    document.getElementById('messageName').value = msg.name || '';
+    document.getElementById('messageChannelId').value = msg.channelId || '';
+    document.getElementById('messageContent').value = msg.content || '';
     
-    if (messageName) messageName.value = msg.name || '';
-    if (messageChannelId) messageChannelId.value = msg.channelId || '';
-    if (messageContent) messageContent.value = msg.content || '';
-    
-    // Clear current images
     messageImageFiles = [];
     updateMessageImagePreview();
     
-    // Load embeds into form
     if (msg.embeds && msg.embeds.length > 0) {
         loadEmbedsIntoForm(msg.embeds);
     } else {
         loadEmbedsIntoForm([]);
     }
     
+    const saveBtn = document.getElementById('saveMessageBtn');
     if (saveBtn) {
         saveBtn.textContent = '✏️ Update Message';
         saveBtn.style.background = '#ffd700';
@@ -1825,7 +1785,6 @@ async function saveMessage() {
         return;
     }
     
-    // Convert images to base64 for storage
     let images = [];
     if (messageImageFiles.length > 0) {
         images = await imagesToBase64(messageImageFiles);
@@ -1863,7 +1822,6 @@ async function saveMessage() {
             showNotify(`Message "${name}" saved successfully!`, "success");
         }
         
-        // Clear form
         clearMessageForm();
         loadSavedMessages();
     } catch (e) {
@@ -1884,7 +1842,6 @@ window.sendSavedMessage = async (id) => {
     
     showNotify(`Sending "${msg.name}"...`, "warning");
     
-    // Build message payload
     const payload = {
         channelId: msg.channelId,
         content: msg.content || null,
@@ -1893,12 +1850,9 @@ window.sendSavedMessage = async (id) => {
     
     let storedMessageId = msg.discordMessageId;
     let success = false;
-    
-    // If we have images, we need to use FormData
     const hasImages = msg.images && msg.images.length > 0;
     
     if (storedMessageId && !hasImages) {
-        // Try to update existing message (only works for text/embeds, not for images)
         try {
             const response = await fetch(`${BACKEND_URL}/update-message`, {
                 method: 'POST',
@@ -1915,23 +1869,19 @@ window.sendSavedMessage = async (id) => {
                 success = true;
                 showNotify(`Message "${msg.name}" updated successfully!`, "success");
             } else if (response.status === 404) {
-                console.log("Message not found, sending new one");
                 storedMessageId = null;
             } else {
                 storedMessageId = null;
             }
         } catch (e) {
-            console.error("Update failed, sending new message:", e);
             storedMessageId = null;
         }
     }
     
     if (!storedMessageId || hasImages) {
-        // Send new message (with optional images via FormData)
         let newMsgResponse;
         
         if (hasImages) {
-            // Convert stored base64 images back to blobs
             const formData = new FormData();
             formData.append('payload_json', JSON.stringify({
                 content: payload.content,
@@ -1940,7 +1890,6 @@ window.sendSavedMessage = async (id) => {
             
             for (let i = 0; i < msg.images.length && i < 5; i++) {
                 const img = msg.images[i];
-                // Convert base64 to blob
                 const base64Response = await fetch(img.data);
                 const blob = await base64Response.blob();
                 formData.append(`file${i}`, blob, img.filename || `image_${i+1}.png`);
@@ -1972,8 +1921,6 @@ window.sendSavedMessage = async (id) => {
                 showNotify(`Message "${msg.name}" sent successfully!`, "success");
             }
         } else {
-            const errorText = await newMsgResponse.text();
-            console.error("Send failed:", errorText);
             success = false;
         }
     }
@@ -1999,26 +1946,20 @@ window.deleteSavedMessage = async (id) => {
 
 function clearMessageForm() {
     currentEditingMessageId = null;
-    const messageName = document.getElementById('messageName');
-    const messageChannelId = document.getElementById('messageChannelId');
-    const messageContent = document.getElementById('messageContent');
-    const saveBtn = document.getElementById('saveMessageBtn');
+    document.getElementById('messageName').value = '';
+    document.getElementById('messageChannelId').value = '';
+    document.getElementById('messageContent').value = '';
     
-    if (messageName) messageName.value = '';
-    if (messageChannelId) messageChannelId.value = '';
-    if (messageContent) messageContent.value = '';
-    
-    // Clear images
     messageImageFiles = [];
     updateMessageImagePreview();
     
-    // Reset embeds to single default
     const container = document.getElementById('embedsContainer');
     if (container) {
         container.innerHTML = '';
-        addEmbedField(); // Add one default embed
+        addEmbedField();
     }
     
+    const saveBtn = document.getElementById('saveMessageBtn');
     if (saveBtn) {
         saveBtn.textContent = '💾 Save Message';
         saveBtn.style.background = '#48bb78';
@@ -2047,6 +1988,13 @@ function initMessageImageUpload() {
     if (addEmbedBtn) {
         addEmbedBtn.addEventListener('click', () => addEmbedField());
     }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // ==========================================
@@ -2180,6 +2128,7 @@ function initEventListeners() {
 
 function init() {
     initEventListeners();
+    initMessageImageUpload();
     
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
