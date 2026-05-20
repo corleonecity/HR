@@ -21,7 +21,7 @@ let systemConfig = {
         leaderboard: '#ffd700'
     },
     limits: {
-        maxImagesPerRequest: 3  // Erhöht auf 3 Bilder
+        maxImagesPerRequest: 3
     },
     musicUrl: 'https://www.youtube.com/watch?v=3Ion7Vwt0Y8&list=RD3Ion7Vwt0Y8&start_radio=1',
     updateInterval: 60
@@ -161,10 +161,6 @@ function updateTestModeIndicator() {
 // ==========================================
 // 3. HELPER FUNCTIONS
 // ==========================================
-
-function getSafeDbKey(username) {
-    return username ? username.replace(/[.#$\[\]]/g, '_') : 'unknown_user';
-}
 
 function playLoginMusic() {
     const ac = document.getElementById('audioPlayerContainer');
@@ -376,12 +372,8 @@ async function updateBotStatus() {
     }
 }
 
-// ==========================================
-// KORRIGIERTE updateDiscordNickname FUNKTION
-// ==========================================
 async function updateDiscordNickname(userId, robloxName, robloxUsername) {
     try {
-        // Wenn robloxName und robloxUsername gleich sind, zeige nur einen
         let newNickname;
         if (robloxName === robloxUsername) {
             newNickname = robloxName;
@@ -389,7 +381,6 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
             newNickname = `${robloxName} (@${robloxUsername})`;
         }
         
-        // Nickname auf max. 32 Zeichen begrenzen (Discord Limit)
         if (newNickname.length > 32) {
             newNickname = newNickname.substring(0, 29) + '...';
         }
@@ -564,7 +555,7 @@ async function sendGPRequestToDiscord(requestData, images) {
 }
 
 // ==========================================
-// 5. DISCORD & ROBLOX AUTHENTIFICATION (KORRIGIERT)
+// 5. DISCORD & ROBLOX AUTHENTIFICATION
 // ==========================================
 
 async function doLiveCheck() {
@@ -598,8 +589,7 @@ function startLiveMemberCheck() {
 }
 
 async function sendLoginWebhook(userData) {
-    const dbKey = getSafeDbKey(userData.discordUsername);
-    const userRef = ref(db, `users/${dbKey}`);
+    const userRef = ref(db, `users/${userData.userId}`);
     const snap = await get(userRef);
     
     if (snap.exists() && snap.val().loginNotified === true) return;
@@ -645,7 +635,6 @@ async function handleDiscordLogin(code) {
     }
 }
 
-// KORRIGIERTE handleRobloxLogin Funktion
 async function handleRobloxLogin(code) {
     try {
         showLoading(true, 'robloxLoginBtn');
@@ -675,16 +664,13 @@ async function handleRobloxLogin(code) {
         }
         
         if (data.success && data.robloxUser) {
-            // KORRIGIERT: Roblox Name und Username separat speichern
-            // name = Display Name (z.B. "TTcolinrbx")
-            // preferred_username = Username (z.B. "lisa_qwq18")
             const rDisplayName = data.robloxUser.name || data.robloxUser.preferred_username || "Unknown";
             const rUsername = data.robloxUser.preferred_username || data.robloxUser.name || "Unknown";
             const rId = data.robloxUser.sub;
             const dDisplayName = currentUser.global_name || currentUser.username || "Unknown";
             
-            const dbKey = getSafeDbKey(currentUser.username);
-            const userRef = ref(db, `users/${dbKey}`);
+            // 🔥 NEU: Discord-ID als Key
+            const userRef = ref(db, `users/${currentUser.id}`);
             const snap = await get(userRef);
             let currentGP = snap.exists() && snap.val().totalGP ? snap.val().totalGP : 0;
             
@@ -700,7 +686,6 @@ async function handleRobloxLogin(code) {
                 linkedAt: Date.now()
             });
 
-            // Nickname mit korrekten Werten aktualisieren
             await updateDiscordNickname(currentUser.id, rDisplayName, rUsername);
 
             await sendLoginWebhook({
@@ -741,8 +726,8 @@ async function checkRobloxLink() {
         await loadSystemConfig();
         await loadTestMode();
         
-        const dbKey = getSafeDbKey(currentUser.username);
-        const snap = await get(ref(db, `users/${dbKey}`));
+        // 🔥 NEU: Discord-ID als Key
+        const snap = await get(ref(db, `users/${currentUser.id}`));
         const loginPage = document.getElementById('loginPage');
         if (loginPage) loginPage.classList.add('hidden');
         
@@ -981,8 +966,8 @@ async function submitGPRequest() {
     }
 
     try {
-        const dbKey = getSafeDbKey(currentUser.username);
-        const userRef = ref(db, `users/${dbKey}`);
+        // 🔥 NEU: Discord-ID als Key
+        const userRef = ref(db, `users/${currentUser.id}`);
         const snap = await get(userRef);
         const userData = snap.val() || {};
 
@@ -998,7 +983,7 @@ async function submitGPRequest() {
 
         await set(newReqRef, {
             id: reqKey,
-            dbKey: dbKey,
+            dbKey: currentUser.id, // 🔥 Discord-ID als dbKey
             userId: dId,
             discordName: dName,
             discordUsername: dUser,
@@ -1095,10 +1080,10 @@ function loadAdminData() {
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                         <input type="text" id="comment_${req.id}" placeholder="Admin comment (optional)" style="padding: 6px; font-size: 12px; border-radius: 6px;">
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn-small btn-approve" onclick="window.handleAdminAction('${req.id}', '${req.userId}', ${req.amount}, 'approve', '${req.dbKey || req.discordUsername}', '${req.robloxId || ''}', '${escapeHtml(req.discordName)}', '${escapeHtml(req.discordUsername)}', '${escapeHtml(req.robloxName)}', '${escapeHtml(req.robloxUsername)}')">
+                            <button class="btn-small btn-approve" onclick="window.handleAdminAction('${req.id}', '${req.userId}', ${req.amount}, 'approve', '${req.dbKey || currentUser.id}', '${req.robloxId || ''}', '${escapeHtml(req.discordName)}', '${escapeHtml(req.discordUsername)}', '${escapeHtml(req.robloxName)}', '${escapeHtml(req.robloxUsername)}')">
                                 <i class="fas fa-check"></i> Approve
                             </button>
-                            <button class="btn-small btn-deny" onclick="window.handleAdminAction('${req.id}', '${req.userId}', ${req.amount}, 'reject', '${req.dbKey || req.discordUsername}', '${req.robloxId || ''}', '${escapeHtml(req.discordName)}', '${escapeHtml(req.discordUsername)}', '${escapeHtml(req.robloxName)}', '${escapeHtml(req.robloxUsername)}')">
+                            <button class="btn-small btn-deny" onclick="window.handleAdminAction('${req.id}', '${req.userId}', ${req.amount}, 'reject', '${req.dbKey || currentUser.id}', '${req.robloxId || ''}', '${escapeHtml(req.discordName)}', '${escapeHtml(req.discordUsername)}', '${escapeHtml(req.robloxName)}', '${escapeHtml(req.robloxUsername)}')">
                                 <i class="fas fa-times"></i> Reject
                             </button>
                         </div>
@@ -1157,7 +1142,8 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
             processedByName: currentUser.global_name || currentUser.username
         });
 
-        const dbKey = getSafeDbKey(passedDbKey);
+        // 🔥 NEU: passedDbKey ist die Discord-ID
+        const dbKey = passedDbKey;
         let newTotal = 0;
         const userRef = ref(db, `users/${dbKey}`);
         const snap = await get(userRef);
@@ -1170,7 +1156,7 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
             }
         }
 
-        // 🔁 Discord-Nachricht aktualisieren (Bilder bleiben erhalten)
+        // Discord-Nachricht aktualisieren
         try {
             const panelActionRes = await fetch(`${BACKEND_URL}/panel-action`, {
                 method: 'POST',
@@ -1235,7 +1221,6 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
         alert("Error: " + e.message);
     } finally {
         if (btn) btn.disabled = false;
-        // Refresh admin table
         loadAdminData();
     }
 };
@@ -1883,8 +1868,8 @@ function initEventListeners() {
     if (rbxLogoutBtn) rbxLogoutBtn.addEventListener('click', async () => {
         if (!confirm("Disconnect Roblox?")) return;
         try {
-            const dbKey = getSafeDbKey(currentUser.username);
-            await update(ref(db, `users/${dbKey}`), {
+            // 🔥 NEU: Discord-ID als Key
+            await update(ref(db, `users/${currentUser.id}`), {
                 robloxId: null,
                 robloxName: null,
                 robloxUsername: null
