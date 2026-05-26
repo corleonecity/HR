@@ -32,49 +32,299 @@
             padding: 10px 20px;
             border-radius: 10px;
         }
+        .language-selector {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        select {
+            background: #1a1a1a;
+            color: white;
+            border: 1px solid #333;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Nutzungsbedingungen</h1>
-        <p><strong>Stand: Mai 2026</strong></p>
+        <div class="language-selector">
+            <label style="color:#888; margin-right:8px;">🌐 Sprache / Language:</label>
+            <select id="languageSelect">
+                <option value="de">Deutsch</option>
+                <option value="en">English</option>
+                <option value="tr">Türkçe</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+            </select>
+        </div>
 
-        <h2>1. Allgemeines</h2>
-        <p>Diese Nutzungsbedingungen regeln die Verwendung des Sword Art Online GP-Systems ("der Service"). Durch die Nutzung des Services stimmst du diesen Bedingungen zu.</p>
-
-        <h2>2. Beschreibung des Services</h2>
-        <p>Das GP-System ermöglicht es Roblox-Spielern, ihre GP-Spenden zu registrieren, ihren Rang in der Bestenliste zu verfolgen und Discord-Rollen basierend auf ihrem GP-Stand zu erhalten.</p>
-
-        <h2>3. Nutzungsvoraussetzungen</h2>
-        <ul>
-            <li>Du musst mindestens 13 Jahre alt sein, um den Service zu nutzen.</li>
-            <li>Du musst einen gültigen Roblox-Account besitzen.</li>
-            <li>Du musst Mitglied des zugehörigen Discord-Servers sein.</li>
-        </ul>
-
-        <h2>4. Verhaltensregeln</h2>
-        <p>Folgendes ist untersagt:</p>
-        <ul>
-            <li>Fälschung von GP-Spenden oder Einreichen falscher Nachweise</li>
-            <li>Manipulation des Systems durch Bots oder automatisierte Skripte</li>
-            <li>Belästigung anderer Nutzer im Zusammenhang mit dem Service</li>
-            <li>Jegliche Verstöße gegen die Roblox-Nutzungsbedingungen</li>
-            <li>Jegliche Verstöße gegen die Discord-Nutzungsbedingungen</li>
-        </ul>
-
-        <h2>5. GP-Spenden & Ränge</h2>
-        <p>GP-Spenden werden durch das Admin-Team überprüft. Gefälschte Spenden führen zum Ausschluss aus dem System. Ränge werden automatisch basierend auf der Gesamt-GP vergeben und können nicht manuell angepasst werden.</p>
-
-        <h2>6. Haftungsausschluss</h2>
-        <p>Der Service wird "wie besehen" bereitgestellt. Wir übernehmen keine Garantie für die ständige Verfügbarkeit. Datenverluste durch technische Probleme liegen nicht in unserer Verantwortung.</p>
-
-        <h2>7. Änderungen</h2>
-        <p>Wir behalten uns das Recht vor, diese Bedingungen jederzeit zu ändern. Die aktuelle Version ist stets unter dieser URL einsehbar.</p>
-
-        <h2>8. Kontakt</h2>
-        <p>Bei Fragen zu diesen Bedingungen kontaktiere uns unter:<br>deine-email@example.com</p>
+        <div id="content">
+            <!-- Wird per JavaScript befüllt -->
+        </div>
 
         <a href="https://corleonecity.github.io/SwordArtOnline/" class="back-link">← Zurück zur App</a>
     </div>
+
+    <script>
+        const translations = {
+            de: {
+                title: "Nutzungsbedingungen",
+                lastUpdated: "Stand: Mai 2026",
+                section1_title: "1. Allgemeines",
+                section1_text: "Diese Nutzungsbedingungen regeln die Verwendung des Sword Art Online GP-Systems (\"der Service\"). Durch die Nutzung des Services stimmst du diesen Bedingungen zu.",
+                section2_title: "2. Beschreibung des Services",
+                section2_text: "Das GP-System ermöglicht es Roblox-Spielern, ihre GP-Spenden zu registrieren, ihren Rang in der Bestenliste zu verfolgen und Discord-Rollen basierend auf ihrem GP-Stand zu erhalten.",
+                section3_title: "3. Nutzungsvoraussetzungen",
+                section3_items: [
+                    "Du musst mindestens 13 Jahre alt sein, um den Service zu nutzen.",
+                    "Du musst einen gültigen Roblox-Account besitzen.",
+                    "Du musst Mitglied des zugehörigen Discord-Servers sein."
+                ],
+                section4_title: "4. Verhaltensregeln",
+                section4_text: "Folgendes ist untersagt:",
+                section4_items: [
+                    "Fälschung von GP-Spenden oder Einreichen falscher Nachweise",
+                    "Manipulation des Systems durch Bots oder automatisierte Skripte",
+                    "Belästigung anderer Nutzer im Zusammenhang mit dem Service",
+                    "Jegliche Verstöße gegen die Roblox-Nutzungsbedingungen",
+                    "Jegliche Verstöße gegen die Discord-Nutzungsbedingungen"
+                ],
+                section5_title: "5. GP-Spenden & Ränge",
+                section5_text: "GP-Spenden werden durch das Admin-Team überprüft. Gefälschte Spenden führen zum Ausschluss aus dem System. Ränge werden automatisch basierend auf der Gesamt-GP vergeben und können nicht manuell angepasst werden.",
+                section6_title: "6. Haftungsausschluss",
+                section6_text: "Der Service wird \"wie besehen\" bereitgestellt. Wir übernehmen keine Garantie für die ständige Verfügbarkeit. Datenverluste durch technische Probleme liegen nicht in unserer Verantwortung.",
+                section7_title: "7. Änderungen",
+                section7_text: "Wir behalten uns das Recht vor, diese Bedingungen jederzeit zu ändern. Die aktuelle Version ist stets unter dieser URL einsehbar.",
+                section8_title: "8. Kontakt",
+                section8_text: "Bei Fragen zu diesen Bedingungen kontaktiere uns unter: deine-email@example.com"
+            },
+            en: {
+                title: "Terms of Service",
+                lastUpdated: "Version: May 2026",
+                section1_title: "1. General",
+                section1_text: "These Terms of Service govern the use of the Sword Art Online GP System (\"the Service\"). By using the Service, you agree to these terms.",
+                section2_title: "2. Service Description",
+                section2_text: "The GP System allows Roblox players to register their GP donations, track their rank on the leaderboard, and receive Discord roles based on their GP level.",
+                section3_title: "3. Eligibility",
+                section3_items: [
+                    "You must be at least 13 years old to use the Service.",
+                    "You must have a valid Roblox account.",
+                    "You must be a member of the associated Discord server."
+                ],
+                section4_title: "4. Rules of Conduct",
+                section4_text: "The following is prohibited:",
+                section4_items: [
+                    "Falsifying GP donations or submitting false evidence",
+                    "Manipulating the system using bots or automated scripts",
+                    "Harassing other users in connection with the Service",
+                    "Any violations of Roblox's Terms of Service",
+                    "Any violations of Discord's Terms of Service"
+                ],
+                section5_title: "5. GP Donations & Ranks",
+                section5_text: "GP donations are verified by the admin team. Falsified donations will result in exclusion from the system. Ranks are automatically assigned based on total GP and cannot be manually adjusted.",
+                section6_title: "6. Disclaimer",
+                section6_text: "The Service is provided 'as is'. We do not guarantee constant availability. Data loss due to technical issues is not our responsibility.",
+                section7_title: "7. Changes",
+                section7_text: "We reserve the right to change these terms at any time. The current version is always available at this URL.",
+                section8_title: "8. Contact",
+                section8_text: "For questions about these terms, contact us at: your-email@example.com"
+            },
+            tr: {
+                title: "Kullanım Şartları",
+                lastUpdated: "Sürüm: Mayıs 2026",
+                section1_title: "1. Genel",
+                section1_text: "Bu Kullanım Şartları, Sword Art Online GP Sisteminin (\"Hizmet\") kullanımını düzenler. Hizmeti kullanarak bu şartları kabul etmiş olursunuz.",
+                section2_title: "2. Hizmet Açıklaması",
+                section2_text: "GP Sistemi, Roblox oyuncularının GP bağışlarını kaydetmelerine, sıralamadaki derecelerini takip etmelerine ve GP seviyelerine göre Discord rolleri almalarına olanak tanır.",
+                section3_title: "3. Kullanım Koşulları",
+                section3_items: [
+                    "Hizmeti kullanmak için en az 13 yaşında olmalısınız.",
+                    "Geçerli bir Roblox hesabınız olmalıdır.",
+                    "İlgili Discord sunucusunun üyesi olmalısınız."
+                ],
+                section4_title: "4. Davranış Kuralları",
+                section4_text: "Aşağıdakiler yasaktır:",
+                section4_items: [
+                    "GP bağışlarını tahrif etmek veya sahte kanıt göndermek",
+                    "Botlar veya otomatik komut dosyaları ile sistemi manipüle etmek",
+                    "Hizmetle ilgili diğer kullanıcıları taciz etmek",
+                    "Roblox Kullanım Şartları'nın ihlalleri",
+                    "Discord Kullanım Şartları'nın ihlalleri"
+                ],
+                section5_title: "5. GP Bağışları ve Dereceler",
+                section5_text: "GP bağışları admin ekibi tarafından doğrulanır. Tahrif edilmiş bağışlar sistemden dışlanmaya yol açar. Dereceler toplam GP'ye göre otomatik olarak atanır ve manuel olarak ayarlanamaz.",
+                section6_title: "6. Sorumluluk Reddi",
+                section6_text: "Hizmet 'olduğu gibi' sağlanır. Sürekli kullanılabilirlik garantisi vermiyoruz. Teknik sorunlar nedeniyle veri kaybı bizim sorumluluğumuzda değildir.",
+                section7_title: "7. Değişiklikler",
+                section7_text: "Bu şartları istediğimiz zaman değiştirme hakkını saklı tutarız. Güncel sürüm her zaman bu URL'de mevcuttur.",
+                section8_title: "8. İletişim",
+                section8_text: "Bu şartlarla ilgili sorularınız için bize şu adresten ulaşın: your-email@example.com"
+            },
+            fr: {
+                title: "Conditions d'utilisation",
+                lastUpdated: "Version: Mai 2026",
+                section1_title: "1. Généralités",
+                section1_text: "Ces conditions d'utilisation régissent l'utilisation du système GP Sword Art Online (le « Service »). En utilisant le Service, vous acceptez ces conditions.",
+                section2_title: "2. Description du service",
+                section2_text: "Le système GP permet aux joueurs Roblox d'enregistrer leurs dons GP, de suivre leur classement et de recevoir des rôles Discord basés sur leur niveau GP.",
+                section3_title: "3. Conditions d'éligibilité",
+                section3_items: [
+                    "Vous devez avoir au moins 13 ans pour utiliser le Service.",
+                    "Vous devez avoir un compte Roblox valide.",
+                    "Vous devez être membre du serveur Discord associé."
+                ],
+                section4_title: "4. Règles de conduite",
+                section4_text: "Ce qui suit est interdit :",
+                section4_items: [
+                    "Falsifier les dons GP ou soumettre de faux justificatifs",
+                    "Manipuler le système avec des bots ou des scripts automatisés",
+                    "Harceler d'autres utilisateurs en lien avec le Service",
+                    "Toute violation des conditions d'utilisation de Roblox",
+                    "Toute violation des conditions d'utilisation de Discord"
+                ],
+                section5_title: "5. Dons GP et classements",
+                section5_text: "Les dons GP sont vérifiés par l'équipe d'administration. Les dons falsifiés entraînent l'exclusion du système. Les classements sont attribués automatiquement en fonction du GP total et ne peuvent pas être ajustés manuellement.",
+                section6_title: "6. Clause de non-responsabilité",
+                section6_text: "Le Service est fourni « en l'état ». Nous ne garantissons pas une disponibilité constante. La perte de données due à des problèmes techniques n'est pas de notre responsabilité.",
+                section7_title: "7. Modifications",
+                section7_text: "Nous nous réservons le droit de modifier ces conditions à tout moment. La version actuelle est toujours disponible à cette URL.",
+                section8_title: "8. Contact",
+                section8_text: "Pour toute question concernant ces conditions, contactez-nous à : your-email@example.com"
+            },
+            es: {
+                title: "Términos de Servicio",
+                lastUpdated: "Versión: Mayo 2026",
+                section1_title: "1. Generalidades",
+                section1_text: "Estos Términos de Servicio rigen el uso del Sistema GP de Sword Art Online (el \"Servicio\"). Al usar el Servicio, aceptas estos términos.",
+                section2_title: "2. Descripción del Servicio",
+                section2_text: "El Sistema GP permite a los jugadores de Roblox registrar sus donaciones GP, seguir su rango en la clasificación y recibir roles de Discord según su nivel de GP.",
+                section3_title: "3. Requisitos de uso",
+                section3_items: [
+                    "Debes tener al menos 13 años para usar el Servicio.",
+                    "Debes tener una cuenta válida de Roblox.",
+                    "Debes ser miembro del servidor de Discord asociado."
+                ],
+                section4_title: "4. Reglas de conducta",
+                section4_text: "Lo siguiente está prohibido:",
+                section4_items: [
+                    "Falsificar donaciones GP o enviar pruebas falsas",
+                    "Manipular el sistema con bots o scripts automatizados",
+                    "Acosar a otros usuarios en relación con el Servicio",
+                    "Cualquier violación de los Términos de Servicio de Roblox",
+                    "Cualquier violación de los Términos de Servicio de Discord"
+                ],
+                section5_title: "5. Donaciones GP y Rangos",
+                section5_text: "Las donaciones GP son verificadas por el equipo de administración. Las donaciones falsificadas resultan en la exclusión del sistema. Los rangos se asignan automáticamente según el GP total y no se pueden ajustar manualmente.",
+                section6_title: "6. Descargo de responsabilidad",
+                section6_text: "El Servicio se proporciona \"tal cual\". No garantizamos una disponibilidad constante. La pérdida de datos debido a problemas técnicos no es nuestra responsabilidad.",
+                section7_title: "7. Cambios",
+                section7_text: "Nos reservamos el derecho de cambiar estos términos en cualquier momento. La versión actual está siempre disponible en esta URL.",
+                section8_title: "8. Contacto",
+                section8_text: "Para preguntas sobre estos términos, contáctanos en: your-email@example.com"
+            },
+            ru: {
+                title: "Условия использования",
+                lastUpdated: "Версия: Май 2026",
+                section1_title: "1. Общие положения",
+                section1_text: "Настоящие Условия использования регулируют использование системы GP Sword Art Online (\"Сервис\"). Используя Сервис, вы соглашаетесь с этими условиями.",
+                section2_title: "2. Описание Сервиса",
+                section2_text: "Система GP позволяет игрокам Roblox регистрировать свои GP-пожертвования, отслеживать свой ранг в таблице лидеров и получать роли Discord на основе уровня GP.",
+                section3_title: "3. Требования к использованию",
+                section3_items: [
+                    "Вам должно быть не менее 13 лет для использования Сервиса.",
+                    "У вас должен быть действующий аккаунт Roblox.",
+                    "Вы должны быть участником соответствующего сервера Discord."
+                ],
+                section4_title: "4. Правила поведения",
+                section4_text: "Запрещается следующее:",
+                section4_items: [
+                    "Фальсификация GP-пожертвований или предоставление ложных доказательств",
+                    "Манипулирование системой с помощью ботов или автоматических скриптов",
+                    "Преследование других пользователей в связи с Сервисом",
+                    "Любые нарушения Условий использования Roblox",
+                    "Любые нарушения Условий использования Discord"
+                ],
+                section5_title: "5. GP-пожертвования и ранги",
+                section5_text: "GP-пожертвования проверяются административной командой. Фальсифицированные пожертвования приводят к исключению из системы. Ранги присваиваются автоматически на основе общего GP и не могут быть изменены вручную.",
+                section6_title: "6. Отказ от ответственности",
+                section6_text: "Сервис предоставляется \"как есть\". Мы не гарантируем постоянную доступность. Потеря данных из-за технических проблем не является нашей ответственностью.",
+                section7_title: "7. Изменения",
+                section7_text: "Мы оставляем за собой право изменять настоящие условия в любое время. Текущая версия всегда доступна по этому URL-адресу.",
+                section8_title: "8. Контакты",
+                section8_text: "По вопросам, касающимся этих условий, свяжитесь с нами по адресу: your-email@example.com"
+            },
+            ar: {
+                title: "شروط الخدمة",
+                lastUpdated: "الإصدار: مايو 2026",
+                section1_title: "1. أحكام عامة",
+                section1_text: "تحكم شروط الخدمة هذه استخدام نظام GP Sword Art Online (\"الخدمة\"). باستخدام الخدمة، فإنك توافق على هذه الشروط.",
+                section2_title: "2. وصف الخدمة",
+                section2_text: "يتيح نظام GP للاعبي Roblox تسجيل تبرعات GP الخاصة بهم، وتتبع مرتبتهم في لوحة المتصدرين، والحصول على أدوار Discord بناءً على مستوى GP الخاص بهم.",
+                section3_title: "3. متطلبات الاستخدام",
+                section3_items: [
+                    "يجب أن يكون عمرك 13 عامًا على الأقل لاستخدام الخدمة.",
+                    "يجب أن يكون لديك حساب Roblox صالح.",
+                    "يجب أن تكون عضوًا في خادم Discord المرتبط."
+                ],
+                section4_title: "4. قواعد السلوك",
+                section4_text: "ما يلي محظور:",
+                section4_items: [
+                    "تزوير تبرعات GP أو تقديم أدلة كاذبة",
+                    "التلاعب بالنظام باستخدام البوتات أو البرامج النصية الآلية",
+                    "مضايقة المستخدمين الآخرين فيما يتعلق بالخدمة",
+                    "أي انتهاكات لشروط خدمة Roblox",
+                    "أي انتهاكات لشروط خدمة Discord"
+                ],
+                section5_title: "5. تبرعات GP والمراتب",
+                section5_text: "يتم التحقق من تبرعات GP بواسطة فريق الإدارة. تؤدي التبرعات المزورة إلى الاستبعاد من النظام. يتم تعيين المراتب تلقائيًا بناءً على إجمالي GP ولا يمكن تعديلها يدويًا.",
+                section6_title: "6. إخلاء المسؤولية",
+                section6_text: "الخدمة مقدمة \"كما هي\". نحن لا نضمن التوفر المستمر. فقدان البيانات بسبب المشكلات الفنية ليس مسؤوليتنا.",
+                section7_title: "7. التغييرات",
+                section7_text: "نحتفظ بالحق في تغيير هذه الشروط في أي وقت. النسخة الحالية متاحة دائمًا على هذا الرابط.",
+                section8_title: "8. الاتصال",
+                section8_text: "للاستفسار حول هذه الشروط، اتصل بنا على: your-email@example.com"
+            }
+        };
+
+        function renderPage(lang) {
+            const t = translations[lang] || translations.de;
+            const contentDiv = document.getElementById('content');
+            
+            let html = `<h1>${t.title}</h1>`;
+            html += `<p><strong>${t.lastUpdated}</strong></p>`;
+            
+            html += `<h2>${t.section1_title}</h2><p>${t.section1_text}</p>`;
+            html += `<h2>${t.section2_title}</h2><p>${t.section2_text}</p>`;
+            
+            html += `<h2>${t.section3_title}</h2><ul>`;
+            t.section3_items.forEach(item => { html += `<li>${item}</li>`; });
+            html += `</ul>`;
+            
+            html += `<h2>${t.section4_title}</h2><p>${t.section4_text}</p><ul>`;
+            t.section4_items.forEach(item => { html += `<li>${item}</li>`; });
+            html += `</ul>`;
+            
+            html += `<h2>${t.section5_title}</h2><p>${t.section5_text}</p>`;
+            html += `<h2>${t.section6_title}</h2><p>${t.section6_text}</p>`;
+            html += `<h2>${t.section7_title}</h2><p>${t.section7_text}</p>`;
+            html += `<h2>${t.section8_title}</h2><p>${t.section8_text}</p>`;
+            
+            contentDiv.innerHTML = html;
+        }
+
+        const select = document.getElementById('languageSelect');
+        const savedLang = localStorage.getItem('terms_language') || 'de';
+        select.value = savedLang;
+        renderPage(savedLang);
+
+        select.addEventListener('change', (e) => {
+            const newLang = e.target.value;
+            localStorage.setItem('terms_language', newLang);
+            renderPage(newLang);
+        });
+    </script>
 </body>
 </html>
