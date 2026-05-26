@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datenschutzerklärung - Sword Art Online GP System</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #050505;
+            color: #e2e8f0;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #1f1f1f;
+        }
+        h1 { color: #ffd700; }
+        h2 { color: #ffd700; margin-top: 30px; }
+        a { color: #5865F2; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            background: #5865F2;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+        .language-selector {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        select {
+            background: #1a1a1a;
+            color: white;
+            border: 1px solid #333;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="language-selector">
+            <label style="color:#888; margin-right:8px;">🌐 Sprache / Language:</label>
+            <select id="languageSelect">
+                <option value="de">Deutsch</option>
+                <option value="en">English</option>
+                <option value="tr">Türkçe</option>
+                <option value="fr">Français</option>
+                <option value="es">Español</option>
+                <option value="ru">Русский</option>
+                <option value="ar">العربية</option>
+            </select>
+        </div>
+
+        <div id="content">
+            <!-- Wird per JavaScript befüllt -->
+        </div>
+
+        <a href="https://corleonecity.github.io/SwordArtOnline/" class="back-link">← Zurück zur App</a>
+    </div>
+
+    <script>
+        const translations = {
+            de: {
+                title: "Datenschutzerklärung",
+                lastUpdated: "Stand: Mai 2026",
+                section1_title: "1. Verantwortliche Stelle",
+                section1_text: "Sword Art Online GP System Team<br>kontakt@example.com<br>https://corleonecity.github.io/SwordArtOnline/",
+                section2_title: "2. Welche Daten wir erheben",
+                section2_text: "Wenn du dich über Discord und Roblox OAuth bei unserem GP-System anmeldest, erheben wir folgende Daten:",
+                section2_items: [
+                    "<strong>Discord-Benutzer-ID</strong> – zur Identifikation deines Accounts",
+                    "<strong>Discord-Benutzername & Anzeigename</strong> – zur Anzeige in Bestenlisten",
+                    "<strong>Discord-Server-Mitgliedschaft</strong> – zur Vergabe von Rollen",
+                    "<strong>Roblox-Benutzer-ID</strong> – zur Verknüpfung mit deinem Discord-Account",
+                    "<strong>Roblox-Benutzername & Anzeigename</strong> – zur Anzeige in Bestenlisten",
+                    "<strong>GP-Spendenbetrag</strong> – zur Berechnung deines Rangs"
+                ],
+                section3_title: "3. Zweck der Datenerhebung",
+                section3_items: [
+                    "Verknüpfung deines Roblox-Accounts mit deinem Discord-Account",
+                    "Berechnung und Anzeige deines GP-Rangs in öffentlichen Bestenlisten",
+                    "Automatische Vergabe von Discord-Rollen basierend auf deinem GP-Stand",
+                    "Bearbeitung von GP-Spendenanfragen"
+                ],
+                section4_title: "4. Datenspeicherung",
+                section4_text: "Deine Daten werden in einer Firebase-Datenbank (Google Cloud) gespeichert. Die Speicherdauer beträgt maximal 31 Tage nach Verlassen des Discord-Servers.",
+                section5_title: "5. Weitergabe an Dritte",
+                section5_text: "Deine Daten werden nicht an Dritte weitergegeben. Öffentlich sichtbar sind lediglich dein Benutzername und dein GP-Stand in der Bestenliste.",
+                section6_title: "6. Deine Rechte",
+                section6_text: "Du hast das Recht auf Auskunft, Berichtigung und Löschung deiner Daten. Kontaktiere uns dafür unter: kontakt@example.com",
+                section7_title: "7. Keine Cookies",
+                section7_text: "Diese App verwendet keine Tracking-Cookies."
+            },
+            en: {
+                title: "Privacy Policy",
+                lastUpdated: "Version: May 2026",
+                section1_title: "1. Responsible Entity",
+                section1_text: "Sword Art Online GP System Team<br>contact@example.com<br>https://corleonecity.github.io/SwordArtOnline/",
+                section2_title: "2. What Data We Collect",
+                section2_text: "When you log in via Discord and Roblox OAuth, we collect the following data:",
+                section2_items: [
+                    "<strong>Discord User ID</strong> – to identify your account",
+                    "<strong>Discord Username & Display Name</strong> – for display in leaderboards",
+                    "<strong>Discord Server Membership</strong> – for role assignment",
+                    "<strong>Roblox User ID</strong> – to link with your Discord account",
+                    "<strong>Roblox Username & Display Name</strong> – for display in leaderboards",
+                    "<strong>GP Donation Amount</strong> – to calculate your rank"
+                ],
+                section3_title: "3. Purpose of Data Collection",
+                section3_items: [
+                    "Linking your Roblox account with your Discord account",
+                    "Calculating and displaying your GP rank in public leaderboards",
+                    "Automatic assignment of Discord roles based on your GP level",
+                    "Processing GP donation requests"
+                ],
+                section4_title: "4. Data Storage",
+                section4_text: "Your data is stored in a Firebase database (Google Cloud). The retention period is a maximum of 31 days after leaving the Discord server.",
+                section5_title: "5. Disclosure to Third Parties",
+                section5_text: "Your data is not shared with third parties. Only your username and GP rank are publicly visible in the leaderboard.",
+                section6_title: "6. Your Rights",
+                section6_text: "You have the right to access, correct, and delete your data. Contact us at: contact@example.com",
+                section7_title: "7. No Cookies",
+                section7_text: "This app does not use tracking cookies."
+            },
+            tr: {
+                title: "Gizlilik Politikası",
+                lastUpdated: "Sürüm: Mayıs 2026",
+                section1_title: "1. Sorumlu Kurum",
+                section1_text: "Sword Art Online GP Sistemi Ekibi<br>iletisim@example.com<br>https://corleonecity.github.io/SwordArtOnline/",
+                section2_title: "2. Hangi Verileri Topluyoruz",
+                section2_text: "Discord ve Roblox OAuth ile giriş yaptığınızda şu verileri topluyoruz:",
+                section2_items: [
+                    "<strong>Discord Kullanıcı Kimliği</strong> – hesabınızı tanımlamak için",
+                    "<strong>Discord Kullanıcı Adı ve Görünen Ad</strong> – sıralamalarda görüntülemek için",
+                    "<strong>Discord Sunucu Üyeliği</strong> – rol ataması için",
+                    "<strong>Roblox Kullanıcı Kimliği</strong> – Discord hesabınızla bağlantı kurmak için",
+                    "<strong>Roblox Kullanıcı Adı ve Görünen Ad</strong> – sıralamalarda görüntülemek için",
+                    "<strong>GP Bağış Miktarı</strong> – sıralamanızı hesaplamak için"
+                ],
+                section3_title: "3. Veri Toplama Amacı",
+                section3_items: [
+                    "Roblox hesabınızı Discord hesabınızla bağlamak",
+                    "GP sıralamanızı halka açık sıralamalarda hesaplamak ve görüntülemek",
+                    "GP seviyenize göre otomatik Discord rolü ataması",
+                    "GP bağış taleplerini işleme almak"
+                ],
+                section4_title: "4. Veri Saklama",
+                section4_text: "Verileriniz bir Firebase veritabanında (Google Cloud) saklanır. Saklama süresi, Discord sunucusundan ayrıldıktan sonra en fazla 31 gündür.",
+                section5_title: "5. Üçüncü Taraflarla Paylaşım",
+                section5_text: "Verileriniz üçüncü taraflarla paylaşılmaz. Yalnızca kullanıcı adınız ve GP sıralamanız sıralamada herkese açıktır.",
+                section6_title: "6. Haklarınız",
+                section6_text: "Verilerinize erişme, düzeltme ve silme hakkına sahipsiniz. Bizimle şu adresten iletişime geçin: iletisim@example.com",
+                section7_title: "7. Çerez Yok",
+                section7_text: "Bu uygulama izleme çerezleri kullanmaz."
+            },
+            fr: {
+                title: "Politique de confidentialité",
+                lastUpdated: "Version: Mai 2026",
+                section1_title: "1. Entité responsable",
+                section1_text: "Équipe du système GP Sword Art Online<br>contact@example.com<br>https://corleonecity.github.io/SwordArtOnline/",
+                section2_title: "2. Données collectées",
+                section2_text: "Lorsque vous vous connectez via Discord et Roblox OAuth, nous collectons les données suivantes :",
+                section2_items: [
+                    "<strong>ID utilisateur Discord</strong> – pour identifier votre compte",
+                    "<strong>Nom d'utilisateur Discord et nom affiché</strong> – pour l'affichage dans les classements",
+                    "<strong>Adhésion au serveur Discord</strong> – pour l'attribution des rôles",
+                    "<strong>ID utilisateur Roblox</strong> – pour lier votre compte Discord",
+                    "<strong>Nom d'utilisateur Roblox et nom affiché</strong> – pour l'affichage dans les classements",
+                    "<strong>Montant du don GP</strong> – pour calculer votre rang"
+                ],
+                section3_title: "3. Finalité de la collecte",
+                section3_items: [
+                    "Lier votre compte Roblox à votre compte Discord",
+                    "Calculer et afficher votre rang GP dans les classements publics",
+                    "Attribution automatique de rôles Discord basée sur votre niveau GP",
+                    "Traitement des demandes de don GP"
+                ],
+                section4_title: "4. Stockage des données",
+                section4_text: "Vos données sont stockées dans une base de données Firebase (Google Cloud). La durée de conservation est d'au maximum 31 jours après avoir quitté le serveur Discord.",
+                section5_title: "5. Partage avec des tiers",
+                section5_text: "Vos données ne sont pas partagées avec des tiers. Seuls votre nom d'utilisateur et votre rang GP sont visibles publiquement dans le classement.",
+                section6_title: "6. Vos droits",
+                section6_text: "Vous avez le droit d'accéder, de rectifier et de supprimer vos données. Contactez-nous à : contact@example.com",
+                section7_title: "7. Pas de cookies",
+                section7_text: "Cette application n'utilise pas de cookies de suivi."
+            },
+            es: {
+                title: "Política de Privacidad",
+                lastUpdated: "Versión: Mayo 2026",
+                section1_title: "1. Entidad responsable",
+                section1_text: "Equipo del Sistema GP Sword Art Online<br>contacto@example.com<br>https://corleonecity.github.io/SwordArtOnline/",
+                section2_title: "2. Datos que recopilamos",
+                section2_text: "Cuando inicias sesión a través de Discord y Roblox OAuth, recopilamos los siguientes datos:",
+                section2_items: [
+                    "<strong>ID de usuario de Discord</strong> – para identificar tu cuenta",
+                    "<strong>Nombre de usuario y nombre mostrado de Discord</strong> – para mostrar en clasificaciones",
+                    "<strong>Membresía del servidor de Discord</strong> – para asignación de roles",
+                    "<strong>ID de usuario de Roblox</strong> – para vincular con tu cuenta de Discord",
+                    "<strong>Nombre de usuario y nombre mostrado de Roblox</strong> – para mostrar en clasificaciones",
+                    "<strong>Cantidad de donación GP</strong> – para calcular tu rango"
+                ],
+                section3_title: "3. Propósito de la recopilación",
+                section3_items: [
+                    "Vincular tu cuenta de Roblox con tu cuenta de Discord",
+                    "Calcular y mostrar tu rango GP en clasificaciones públicas",
+                    "Asignación automática de roles de Discord según tu nivel de GP",
+                    "Procesar solicitudes de donación GP"
+                ],
+                section4_title: "4. Almacenamiento de datos",
+                section4_text: "Tus datos se almacenan en una base de datos de Firebase (Google Cloud). El período de retención es de un máximo de 31 días después de abandonar el servidor de Discord.",
+                section5_title: "5. Divulgación a terceros",
+                section5_text: "Tus datos no se comparten con terceros. Solo tu nombre de usuario y tu rango GP son visibles públicamente en la clasificación.",
+                section6_title: "6. Tus derechos",
+                section6_text: "Tienes derecho a acceder, corregir y eliminar tus datos. Contáctanos en: contacto@example.com",
+                section7_title: "7. Sin cookies",
+                section7_text: "Esta aplicación no utiliza cookies de seguimiento."
+            },
+            ru: {
+                title: "Политика конфиденциальности",
+                lastUpdated: "Версия: Май 2026",
+                section1_title: "1. Ответственное лицо",
+                section1_text: "Команда системы GP Sword Art Online<br>contact@example.com<br>https://corleonecity.github.io/SwordArtOnline/",
+                section2_title: "2. Какие данные мы собираем",
+                section2_text: "Когда вы входите через Discord и Roblox OAuth, мы собираем следующие данные:",
+                section2_items: [
+                    "<strong>ID пользователя Discord</strong> – для идентификации вашей учетной записи",
+                    "<strong>Имя пользователя Discord и отображаемое имя</strong> – для отображения в таблицах лидеров",
+                    "<strong>Участие в сервере Discord</strong> – для назначения ролей",
+                    "<strong>ID пользователя Roblox</strong> – для связи с вашей учетной записью Discord",
+                    "<strong>Имя пользователя Roblox и отображаемое имя</strong> – для отображения в таблицах лидеров",
+                    "<strong>Сумма пожертвования GP</strong> – для расчета вашего ранга"
+                ],
+                section3_title: "3. Цель сбора данных",
+                section3_items: [
+                    "Привязка вашей учетной записи Roblox к учетной записи Discord",
+                    "Расчет и отображение вашего GP ранга в публичных таблицах лидеров",
+                    "Автоматическое назначение ролей Discord на основе вашего уровня GP",
+                    "Обработка запросов на пожертвования GP"
+                ],
+                section4_title: "4. Хранение данных",
+                section4_text: "Ваши данные хранятся в базе данных Firebase (Google Cloud). Срок хранения составляет максимум 31 день после выхода с сервера Discord.",
+                section5_title: "5. Передача третьим лицам",
+                section5_text: "Ваши данные не передаются третьим лицам. Публично видны только ваше имя пользователя и ваш GP ранг в таблице лидеров.",
+                section6_title: "6. Ваши права",
+                section6_text: "Вы имеете право на доступ, исправление и удаление ваших данных. Свяжитесь с нами по адресу: contact@example.com",
+                section7_title: "7. Без файлов cookie",
+                section7_text: "Это приложение не использует отслеживающие файлы cookie."
+            },
+            ar: {
+                title: "سياسة الخصوصية",
+                lastUpdated: "الإصدار: مايو 2026",
+                section1_title: "1. الجهة المسؤولة",
+                section1_text: "فريق نظام GP Sword Art Online<br>contact@example.com<br>https://corleonecity.github.io/SwordArtOnline/",
+                section2_title: "2. البيانات التي نجمعها",
+                section2_text: "عند تسجيل الدخول عبر Discord و Roblox OAuth، نجمع البيانات التالية:",
+                section2_items: [
+                    "<strong>معرف مستخدم Discord</strong> – لتحديد حسابك",
+                    "<strong>اسم مستخدم Discord والاسم المعروض</strong> – للعرض في لوحات المتصدرين",
+                    "<strong>عضوية خادم Discord</strong> – لتعيين الأدوار",
+                    "<strong>معرف مستخدم Roblox</strong> – للربط بحساب Discord الخاص بك",
+                    "<strong>اسم مستخدم Roblox والاسم المعروض</strong> – للعرض في لوحات المتصدرين",
+                    "<strong>مبلغ التبرع GP</strong> – لحساب مرتبتك"
+                ],
+                section3_title: "3. الغرض من جمع البيانات",
+                section3_items: [
+                    "ربط حساب Roblox الخاص بك بحساب Discord الخاص بك",
+                    "حساب وعرض مرتبة GP الخاصة بك في لوحات المتصدرين العامة",
+                    "تعيين أدوار Discord تلقائيًا بناءً على مستوى GP الخاص بك",
+                    "معالجة طلبات التبرع GP"
+                ],
+                section4_title: "4. تخزين البيانات",
+                section4_text: "يتم تخزين بياناتك في قاعدة بيانات Firebase (Google Cloud). مدة الاحتفاظ القصوى هي 31 يومًا بعد مغادرة خادم Discord.",
+                section5_title: "5. الإفصاح لأطراف ثالثة",
+                section5_text: "لا تتم مشاركة بياناتك مع أطراف ثالثة. فقط اسم المستخدم ومرتبة GP الخاصة بك مرئية للجمهور في لوحة المتصدرين.",
+                section6_title: "6. حقوقك",
+                section6_text: "لديك الحق في الوصول إلى بياناتك وتصحيحها وحذفها. اتصل بنا على: contact@example.com",
+                section7_title: "7. لا توجد ملفات تعريف ارتباط",
+                section7_text: "هذا التطبيق لا يستخدم ملفات تعريف ارتباط للتتبع."
+            }
+        };
+
+        function renderPage(lang) {
+            const t = translations[lang] || translations.de;
+            const contentDiv = document.getElementById('content');
+            
+            let html = `<h1>${t.title}</h1>`;
+            html += `<p><strong>${t.lastUpdated}</strong></p>`;
+            
+            html += `<h2>${t.section1_title}</h2><p>${t.section1_text}</p>`;
+            
+            html += `<h2>${t.section2_title}</h2><p>${t.section2_text}</p><ul>`;
+            t.section2_items.forEach(item => { html += `<li>${item}</li>`; });
+            html += `</ul>`;
+            
+            html += `<h2>${t.section3_title}</h2><ul>`;
+            t.section3_items.forEach(item => { html += `<li>${item}</li>`; });
+            html += `</ul>`;
+            
+            html += `<h2>${t.section4_title}</h2><p>${t.section4_text}</p>`;
+            html += `<h2>${t.section5_title}</h2><p>${t.section5_text}</p>`;
+            html += `<h2>${t.section6_title}</h2><p>${t.section6_text}</p>`;
+            html += `<h2>${t.section7_title}</h2><p>${t.section7_text}</p>`;
+            
+            contentDiv.innerHTML = html;
+        }
+
+        const select = document.getElementById('languageSelect');
+        const savedLang = localStorage.getItem('privacy_language') || 'de';
+        select.value = savedLang;
+        renderPage(savedLang);
+
+        select.addEventListener('change', (e) => {
+            const newLang = e.target.value;
+            localStorage.setItem('privacy_language', newLang);
+            renderPage(newLang);
+        });
+    </script>
+</body>
+</html>
