@@ -374,16 +374,30 @@ async function updateBotStatus() {
 
 async function updateDiscordNickname(userId, robloxName, robloxUsername) {
     try {
-        // Format: "TTcolinrbx (@lisa_qwq18)"
         let newNickname;
+        
+        // Wenn Anzeigename und Benutzername identisch sind
         if (robloxName === robloxUsername) {
-            newNickname = robloxName;
+            newNickname = `(@${robloxUsername})`;
         } else {
             newNickname = `${robloxName} (@${robloxUsername})`;
         }
         
+        // Discord Nickname Limit: 32 Zeichen
         if (newNickname.length > 32) {
-            newNickname = newNickname.substring(0, 29) + '...';
+            if (robloxName === robloxUsername) {
+                // Fallback für den Fall, dass "(@username)" zu lang ist
+                newNickname = `(@${robloxUsername.substring(0, 28)})`;
+            } else {
+                // Kürze den Anzeigenamen
+                const maxNameLength = 32 - (robloxUsername.length + 5); // +5 für " (@)"
+                if (maxNameLength > 5) {
+                    const shortName = robloxName.substring(0, maxNameLength - 3) + '...';
+                    newNickname = `${shortName} (@${robloxUsername})`;
+                } else {
+                    newNickname = `(@${robloxUsername.substring(0, 28)})`;
+                }
+            }
         }
         
         const response = await fetch(`${BACKEND_URL}/update-nickname`, {
