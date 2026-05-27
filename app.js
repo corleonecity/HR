@@ -386,16 +386,24 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
         // Discord Nickname Limit: 32 Zeichen
         if (newNickname.length > 32) {
             if (robloxName === robloxUsername) {
-                // Fallback für den Fall, dass "(@username)" zu lang ist
-                newNickname = `(@${robloxUsername.substring(0, 28)})`;
+                // Fallback: Username kürzen
+                const maxUsernameLength = 28; // 32 - 4 für "(@)"
+                const shortUsername = robloxUsername.substring(0, maxUsernameLength);
+                newNickname = `(@${shortUsername})`;
             } else {
-                // Kürze den Anzeigenamen
-                const maxNameLength = 32 - (robloxUsername.length + 5); // +5 für " (@)"
-                if (maxNameLength > 5) {
-                    const shortName = robloxName.substring(0, maxNameLength - 3) + '...';
-                    newNickname = `${shortName} (@${robloxUsername})`;
+                // Anzeigename bleibt vollständig, Username wird gekürzt
+                // Format: "Anzeigename (@gekürzterUsername)"
+                const baseLength = robloxName.length + 4; // +4 für " (@)"
+                const maxUsernameLength = 32 - baseLength;
+                
+                if (maxUsernameLength >= 3) {
+                    const shortUsername = robloxUsername.substring(0, maxUsernameLength);
+                    newNickname = `${robloxName} (@${shortUsername})`;
                 } else {
-                    newNickname = `(@${robloxUsername.substring(0, 28)})`;
+                    // Fallback: Wenn selbst der kürzeste Username nicht passt, nimm nur den Anzeigenamen
+                    const maxNameLength = 32;
+                    const shortName = robloxName.substring(0, maxNameLength);
+                    newNickname = shortName;
                 }
             }
         }
