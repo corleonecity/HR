@@ -766,7 +766,7 @@ async function checkRobloxLink() {
         await loadSystemConfig();
         await loadTestMode();
         
-        // 🔥 NEU: Discord-ID als Key
+        // Discord-ID als Key
         const snap = await get(ref(db, `users/${currentUser.id}`));
         const loginPage = document.getElementById('loginPage');
         if (loginPage) loginPage.classList.add('hidden');
@@ -775,13 +775,45 @@ async function checkRobloxLink() {
             if (currentUser && currentUser.id) {
                 await fetchUserRoles(currentUser.id);
             }
-            showDashboard();
-            startLiveMemberCheck();
-            fetch(`${BACKEND_URL}/check-member`, {
+            
+            // 🔥 NEU: Rollen direkt nach dem Login synchronisieren
+            console.log("🔄 Synchronisiere Rollen für User:", currentUser.id);
+            
+            // 1. Über den check-member Endpunkt (der updated die REG/UNREG Rollen)
+            const checkResponse = await fetch(`${BACKEND_URL}/check-member`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
             });
+            console.log("Check-member response:", checkResponse.status);
+            
+            // 2. Direkt die REG Rolle hinzufügen (zusätzlich)
+            const addRegRole = await fetch(`${BACKEND_URL}/update-user-role`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    userId: currentUser.id, 
+                    roleId: '1503217692843180083',
+                    action: 'add'
+                })
+            });
+            console.log("Add REG role response:", addRegRole.status);
+            
+            // 3. Direkt die UNREG Rolle entfernen (zusätzlich)
+            const removeUnregRole = await fetch(`${BACKEND_URL}/update-user-role`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    userId: currentUser.id, 
+                    roleId: '1503218754643820624',
+                    action: 'remove'
+                })
+            });
+            console.log("Remove UNREG role response:", removeUnregRole.status);
+            
+            showDashboard();
+            startLiveMemberCheck();
+            
         } else {
             const robloxPage = document.getElementById('robloxPage');
             if (robloxPage) robloxPage.classList.remove('hidden');
