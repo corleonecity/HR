@@ -669,7 +669,7 @@ async function handleRobloxLogin(code) {
             const rId = data.robloxUser.sub;
             const dDisplayName = currentUser.global_name || currentUser.username || "Unknown";
             
-            // 🔥 NEU: Discord-ID als Key
+            // Discord-ID als Key
             const userRef = ref(db, `users/${currentUser.id}`);
             const snap = await get(userRef);
             let currentGP = snap.exists() && snap.val().totalGP ? snap.val().totalGP : 0;
@@ -697,10 +697,24 @@ async function handleRobloxLogin(code) {
                 robloxId: rId
             });
 
-            await fetch(`${BACKEND_URL}/check-member`, {
+            // 🔥 Rollen über den Bot synchronisieren (setzt Panel Registered)
+            const syncResponse = await fetch(`${BACKEND_URL}/check-member`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
+            });
+            
+            console.log("Role sync response:", syncResponse.status);
+            
+            // 🔥 Zusätzlich explizit die Panel Registered Rolle setzen
+            await fetch(`${BACKEND_URL}/update-user-role`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    userId: currentUser.id, 
+                    roleId: '1503217692843180083',
+                    action: 'add'
+                })
             });
 
             showNotify("Roblox account linked successfully!", "success");
@@ -713,6 +727,32 @@ async function handleRobloxLogin(code) {
         showNotify(`Linking Error: ${e.message}`, "error");
     } finally {
         showLoading(false, 'robloxLoginBtn');
+    }
+}
+
+async function updateUserDiscordRole(userId, roleId, add = true) {
+    try {
+        const response = await fetch(`${BACKEND_URL}/update-user-role`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                userId: userId, 
+                roleId: roleId,
+                action: add ? 'add' : 'remove',
+                guildId: '1439377447630930084'
+            })
+        });
+        
+        if (response.ok) {
+            console.log(`Role ${roleId} ${add ? 'added to' : 'removed from'} ${userId}`);
+            return true;
+        } else {
+            console.error(`Failed to update role: ${await response.text()}`);
+            return false;
+        }
+    } catch (e) {
+        console.error(`Role update error:`, e);
+        return false;
     }
 }
 
