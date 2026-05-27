@@ -374,6 +374,7 @@ async function updateBotStatus() {
 
 async function updateDiscordNickname(userId, robloxName, robloxUsername) {
     try {
+        // Format: "TTcolinrbx (@lisa_qwq18)"
         let newNickname;
         if (robloxName === robloxUsername) {
             newNickname = robloxName;
@@ -697,17 +698,19 @@ async function handleRobloxLogin(code) {
                 robloxId: rId
             });
 
-            // 🔥 Rollen über den Bot synchronisieren (setzt Panel Registered)
+            // 🔥 Rollen synchronisieren - UNREG entfernen, REG hinzufügen
+            console.log("🔄 Synchronisiere Rollen für User:", currentUser.id);
+            
+            // 1. Über check-member (aktualisiert beide Rollen)
             const syncResponse = await fetch(`${BACKEND_URL}/check-member`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
             });
+            console.log("Check-member response:", syncResponse.status);
             
-            console.log("Role sync response:", syncResponse.status);
-            
-            // 🔥 Zusätzlich explizit die Panel Registered Rolle setzen
-            await fetch(`${BACKEND_URL}/update-user-role`, {
+            // 2. EXPLIZIT: REG Rolle hinzufügen (1503217692843180083)
+            const addRegRole = await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -716,6 +719,19 @@ async function handleRobloxLogin(code) {
                     action: 'add'
                 })
             });
+            console.log("Add REG role response:", addRegRole.status);
+            
+            // 3. EXPLIZIT: UNREG Rolle entfernen (1503218754643820624)
+            const removeUnregRole = await fetch(`${BACKEND_URL}/update-user-role`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    userId: currentUser.id, 
+                    roleId: '1503218754643820624',
+                    action: 'remove'
+                })
+            });
+            console.log("Remove UNREG role response:", removeUnregRole.status);
 
             showNotify("Roblox account linked successfully!", "success");
             window.location.href = REDIRECT_URI;
@@ -776,19 +792,18 @@ async function checkRobloxLink() {
                 await fetchUserRoles(currentUser.id);
             }
             
-            // 🔥 NEU: Rollen direkt nach dem Login synchronisieren
-            console.log("🔄 Synchronisiere Rollen für User:", currentUser.id);
+            // 🔥 Rollen synchronisieren - UNREG entfernen, REG hinzufügen
+            console.log("🔄 checkRobloxLink - Synchronisiere Rollen für User:", currentUser.id);
             
-            // 1. Über den check-member Endpunkt (der updated die REG/UNREG Rollen)
-            const checkResponse = await fetch(`${BACKEND_URL}/check-member`, {
+            // 1. Über check-member
+            await fetch(`${BACKEND_URL}/check-member`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
             });
-            console.log("Check-member response:", checkResponse.status);
             
-            // 2. Direkt die REG Rolle hinzufügen (zusätzlich)
-            const addRegRole = await fetch(`${BACKEND_URL}/update-user-role`, {
+            // 2. EXPLIZIT: REG Rolle hinzufügen (1503217692843180083)
+            await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -797,10 +812,9 @@ async function checkRobloxLink() {
                     action: 'add'
                 })
             });
-            console.log("Add REG role response:", addRegRole.status);
             
-            // 3. Direkt die UNREG Rolle entfernen (zusätzlich)
-            const removeUnregRole = await fetch(`${BACKEND_URL}/update-user-role`, {
+            // 3. EXPLIZIT: UNREG Rolle entfernen (1503218754643820624)
+            await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -809,7 +823,6 @@ async function checkRobloxLink() {
                     action: 'remove'
                 })
             });
-            console.log("Remove UNREG role response:", removeUnregRole.status);
             
             showDashboard();
             startLiveMemberCheck();
