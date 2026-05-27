@@ -437,30 +437,6 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
         return false;
     }
 }
-        
-        const response = await fetch(`${BACKEND_URL}/update-nickname`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                userId: userId, 
-                nickname: newNickname,
-                guildId: '1439377447630930084'
-            })
-        });
-        
-        if (response.ok) {
-            console.log(`Nickname updated to: ${newNickname}`);
-            return true;
-        } else {
-            const error = await response.text();
-            console.error(`Failed to update nickname: ${error}`);
-            return false;
-        }
-    } catch (e) {
-        console.error(`Nickname update error:`, e);
-        return false;
-    }
-}
 
 async function sendLoginToDiscord(userData) {
     const channels = await getChannelConfig();
