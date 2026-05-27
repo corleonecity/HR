@@ -34,6 +34,16 @@
         <button id="discordLoginBtn" class="btn-discord">
             <i class="fab fa-discord"></i> Login with Discord
         </button>
+        
+        <!-- Privacy & Terms Buttons -->
+        <div style="display: flex; gap: 15px; margin-top: 25px; justify-content: center; flex-wrap: wrap;">
+            <a href="https://corleonecity.github.io/SwordArtOnline/privacy.html" target="_blank" style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 30px; color: #aaa; text-decoration: none; font-size: 13px; transition: all 0.2s;">
+                <i class="fas fa-shield-alt"></i> Privacy Policy
+            </a>
+            <a href="https://corleonecity.github.io/SwordArtOnline/terms.html" target="_blank" style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 30px; color: #aaa; text-decoration: none; font-size: 13px; transition: all 0.2s;">
+                <i class="fas fa-file-contract"></i> Terms of Service
+            </a>
+        </div>
     </div>
 
     <div id="noPermissionPage" class="login-container hidden">
@@ -42,6 +52,16 @@
         </div>
         <h2>Access Denied</h2>
         <p>You do not have permission to view this page. You must be a member of our official Discord server to access the panel.</p>
+        
+        <!-- Privacy & Terms Buttons -->
+        <div style="display: flex; gap: 15px; margin-top: 25px; justify-content: center; flex-wrap: wrap;">
+            <a href="https://corleonecity.github.io/SwordArtOnline/privacy.html" target="_blank" style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 30px; color: #aaa; text-decoration: none; font-size: 13px; transition: all 0.2s;">
+                <i class="fas fa-shield-alt"></i> Privacy Policy
+            </a>
+            <a href="https://corleonecity.github.io/SwordArtOnline/terms.html" target="_blank" style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 30px; color: #aaa; text-decoration: none; font-size: 13px; transition: all 0.2s;">
+                <i class="fas fa-file-contract"></i> Terms of Service
+            </a>
+        </div>
     </div>
 
     <div id="robloxPage" class="login-container hidden">
@@ -51,6 +71,16 @@
         <button id="robloxLoginBtn" class="btn-roblox">
             <i class="fas fa-gamepad"></i> Connect with Roblox
         </button>
+        
+        <!-- Privacy & Terms Buttons -->
+        <div style="display: flex; gap: 15px; margin-top: 25px; justify-content: center; flex-wrap: wrap;">
+            <a href="https://corleonecity.github.io/SwordArtOnline/privacy.html" target="_blank" style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 30px; color: #aaa; text-decoration: none; font-size: 13px; transition: all 0.2s;">
+                <i class="fas fa-shield-alt"></i> Privacy Policy
+            </a>
+            <a href="https://corleonecity.github.io/SwordArtOnline/terms.html" target="_blank" style="background: rgba(255,255,255,0.05); padding: 10px 20px; border-radius: 30px; color: #aaa; text-decoration: none; font-size: 13px; transition: all 0.2s;">
+                <i class="fas fa-file-contract"></i> Terms of Service
+            </a>
+        </div>
     </div>
 
     <div id="mainContent" class="hidden">
@@ -120,7 +150,9 @@
 
                     <div class="table-responsive">
                         <table class="table">
-                            <thead><tr><th>Rank</th><th>Discord</th><th>Roblox</th><th>Total GP</th></tr></thead>
+                            <thead>
+                                <tr><th>Rank</th><th>Discord</th><th>Roblox</th><th>Total GP</th></tr>
+                            </thead>
                             <tbody id="leaderboardBody"></tbody>
                         </table>
                     </div>
@@ -138,7 +170,9 @@
                     <p style="color:#888; margin-bottom: 15px; font-size:14px;">Here you can see the status of your submitted GP.</p>
                     <div class="table-responsive">
                         <table class="table">
-                            <thead><tr><th>Date</th><th>Amount</th><th>Status</th><th>Admin Comment</th></tr></thead>
+                            <thead>
+                                <tr><th>Date</th><th>Amount</th><th>Status</th><th>Admin Comment</th></tr>
+                            </thead>
                             <tbody id="profileHistoryBody"></tbody>
                         </table>
                     </div>
@@ -151,7 +185,9 @@
                     <p style="color:#888; margin-bottom: 15px; font-size:14px;">Please check proof photos before approving.</p>
                     <div class="table-responsive">
                         <table class="table">
-                            <thead><tr><th>User (Discord)</th><th>Roblox</th><th>Amount</th><th>Action</th></tr></thead>
+                            <thead>
+                                <tr><th>User (Discord)</th><th>Roblox</th><th>Amount</th><th>Action</th></tr>
+                            </thead>
                             <tbody id="adminPendingBody"></tbody>
                         </table>
                     </div>
@@ -291,7 +327,9 @@
                     <p style="color:#888; margin-bottom: 15px; font-size:14px;">All user kicks are logged here.</p>
                     <div class="table-responsive">
                         <table class="table">
-                            <thead><tr><th>Date</th><th>Kicked User</th><th>Kicked By</th><th>Reason</th><th>DM Sent</th></tr></thead>
+                            <thead>
+                                <tr><th>Date</th><th>Kicked User</th><th>Kicked By</th><th>Reason</th><th>DM Sent</th></tr>
+                            </thead>
                             <tbody id="kickLogsBody"></tbody>
                         </table>
                     </div>
