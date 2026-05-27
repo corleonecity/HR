@@ -386,24 +386,30 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
         // Discord Nickname Limit: 32 Zeichen
         if (newNickname.length > 32) {
             if (robloxName === robloxUsername) {
-                // Fallback: Username kürzen
+                // Gleiche Namen: Username kürzen (notwendig)
                 const maxUsernameLength = 28; // 32 - 4 für "(@)"
                 const shortUsername = robloxUsername.substring(0, maxUsernameLength);
                 newNickname = `(@${shortUsername})`;
             } else {
-                // Anzeigename bleibt vollständig, Username wird gekürzt
-                // Format: "Anzeigename (@gekürzterUsername)"
-                const baseLength = robloxName.length + 4; // +4 für " (@)"
-                const maxUsernameLength = 32 - baseLength;
+                // Unterschiedliche Namen: USERNAME bleibt VOLLSTÄNDIG
+                // Anzeigename wird gekürzt
                 
-                if (maxUsernameLength >= 3) {
-                    const shortUsername = robloxUsername.substring(0, maxUsernameLength);
-                    newNickname = `${robloxName} (@${shortUsername})`;
+                // Berechne maximalen Platz für den Anzeigenamen
+                // Format: "ANGEZEIGTERNAME (@VOLLER_USERNAME)"
+                // Länge = Anzeigename.length + username.length + 5
+                const usernameLength = robloxUsername.length;
+                const maxDisplayNameLength = 32 - usernameLength - 5; // -5 für " (@)" und Leerzeichen
+                
+                if (maxDisplayNameLength >= 3) {
+                    // Anzeigename kürzen wenn nötig
+                    let shortDisplayName = robloxName;
+                    if (robloxName.length > maxDisplayNameLength) {
+                        shortDisplayName = robloxName.substring(0, maxDisplayNameLength - 3) + '...';
+                    }
+                    newNickname = `${shortDisplayName} (@${robloxUsername})`;
                 } else {
-                    // Fallback: Wenn selbst der kürzeste Username nicht passt, nimm nur den Anzeigenamen
-                    const maxNameLength = 32;
-                    const shortName = robloxName.substring(0, maxNameLength);
-                    newNickname = shortName;
+                    // Fallback: Nur Username anzeigen
+                    newNickname = `(@${robloxUsername})`;
                 }
             }
         }
