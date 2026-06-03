@@ -63,32 +63,36 @@ let currentUser = null;
 let selectedFiles = [];
 let allUsersData = {};
 let liveCheckInterval = null;
+let roleSyncInterval = null;
 let userGuildRoles = [];
 let currentEditingMessageId = null;
 let isCheckingSession = false;
 let reloadTimeout = null;
 
+// Session key for localStorage
+const SESSION_KEY = 'sao_persistent_session';
+
+// Role cache
+let cachedUserRoles = null;
+let cachedUserRolesTime = 0;
+const ROLE_CACHE_TTL = 60000; // 1 minute cache
+
 // ==========================================
 // 2. SESSION MANAGEMENT (PERSISTENT)
 // ==========================================
 
-// SESSION KEY für localStorage
-const SESSION_KEY = 'sao_persistent_session';
-
-// Session speichern (persistent)
 function saveSession(user) {
     if (user) {
         const sessionData = {
             user: user,
             savedAt: Date.now(),
-            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 Tage gültig
+            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
         };
         localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         console.log("✅ Session saved to localStorage, expires in 7 days");
     }
 }
 
-// Session laden (persistent)
 function loadSession() {
     try {
         const saved = localStorage.getItem(SESSION_KEY);
@@ -96,21 +100,19 @@ function loadSession() {
         
         const sessionData = JSON.parse(saved);
         
-        // Prüfen ob Session abgelaufen ist (7 Tage)
         if (sessionData.expiresAt && sessionData.expiresAt < Date.now()) {
             console.log("⏰ Session expired");
             localStorage.removeItem(SESSION_KEY);
             return null;
         }
         
-        // Prüfen ob User-Daten existieren
         if (!sessionData.user || !sessionData.user.id) {
             console.log("❌ Invalid session data");
             localStorage.removeItem(SESSION_KEY);
             return null;
         }
         
-        console.log(`✅ Session loaded for user ${sessionData.user.id}, valid until ${new Date(sessionData.expiresAt).toLocaleString()}`);
+        console.log(`✅ Session loaded for user ${sessionData.user.id}`);
         return sessionData.user;
     } catch (e) {
         console.error("Error loading session:", e);
@@ -119,11 +121,13 @@ function loadSession() {
     }
 }
 
-// Session löschen
 function clearSession() {
     localStorage.removeItem(SESSION_KEY);
     if (liveCheckInterval) clearInterval(liveCheckInterval);
+    if (roleSyncInterval) clearInterval(roleSyncInterval);
     currentUser = null;
+    userGuildRoles = [];
+    cachedUserRoles = null;
     console.log("🗑️ Session cleared");
 }
 
@@ -280,8 +284,10 @@ function switchTab(tabName) {
 
 function forceKickUser() {
     if (liveCheckInterval) clearInterval(liveCheckInterval);
-    clearSession(); // Session löschen
+    if (roleSyncInterval) clearInterval(roleSyncInterval);
+    clearSession();
     currentUser = null;
+    userGuildRoles = [];
     const mainContent = document.getElementById('mainContent');
     const robloxPage = document.getElementById('robloxPage');
     const loginPage = document.getElementById('loginPage');
@@ -293,6 +299,69 @@ function forceKickUser() {
     if (noPermissionPage) noPermissionPage.classList.add('hidden');
     stopMusic();
     showNotify("Your session has expired. Please login again.", "warning");
+}
+
+// ==========================================
+// 5. ROLE MANAGEMENT WITH LIVE CHECKS
+// ==========================================
+
+async function fetchUserRolesFresh(userId) {
+    if (!userId || !BACKEND_URL) {
+        userGuildRoles = [];
+        return [];
+    }
+    
+    try {
+        const response = await fetch(`${BACKEND_URL}/user-roles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userId })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            userGuildRoles = data.roles || [];
+            cachedUserRoles = userGuildRoles;
+            cachedUserRolesTime = Date.now();
+            console.log("✅ User roles fresh loaded:", userGuildRoles);
+        } else {
+            userGuildRoles = [];
+        }
+    } catch (e) {
+        console.warn("Error fetching user roles:", e);
+        userGuildRoles = [];
+    }
+    
+    await loadRoleConfig();
+    updatePermissions();
+    return userGuildRoles;
+}
+
+async function fetchUserRoles(userId, forceFresh = false) {
+    if (forceFresh || !cachedUserRoles || (Date.now() - cachedUserRolesTime) > ROLE_CACHE_TTL) {
+        return fetchUserRolesFresh(userId);
+    }
+    userGuildRoles = cachedUserRoles;
+    return cachedUserRoles;
+}
+
+async function hasAdminPermissionLive() {
+    if (!currentUser) return false;
+    if (currentUser.id === OWNER_USER_ID) return true;
+    await fetchUserRoles(currentUser.id, true);
+    return userGuildRoles.some(role => ADMIN_ROLES.includes(role));
+}
+
+async function hasOwnerPermissionLive() {
+    if (!currentUser) return false;
+    if (currentUser.id === OWNER_USER_ID) return true;
+    await fetchUserRoles(currentUser.id, true);
+    return userGuildRoles.some(role => OWNER_ROLES.includes(role));
+}
+
+async function hasGpSubmitPermissionLive() {
+    await fetchUserRoles(currentUser.id, true);
+    return userGuildRoles.includes(GP_SUBMIT_ROLE);
 }
 
 function hasAdminPermission() {
@@ -328,7 +397,10 @@ function updatePermissions() {
         if (noPermissionCard) noPermissionCard.classList.remove('hidden');
         if (tabBtnSpenden) tabBtnSpenden.style.display = 'none';
         if (spendenContent && !spendenContent.classList.contains('hidden')) {
-            switchTab('Leaderboard');
+            const activeTab = document.querySelector('.nav-tab.active');
+            if (activeTab && activeTab.id === 'tabBtnSpenden') {
+                switchTab('Leaderboard');
+            }
         }
     }
     
@@ -339,36 +411,6 @@ function updatePermissions() {
     if (tabBtnOwner) {
         tabBtnOwner.style.display = hasOwnerPermission() ? 'flex' : 'none';
     }
-}
-
-async function fetchUserRoles(userId) {
-    if (!userId || !BACKEND_URL) {
-        userGuildRoles = [];
-        return [];
-    }
-    
-    try {
-        const response = await fetch(`${BACKEND_URL}/user-roles`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userId })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            userGuildRoles = data.roles || [];
-            console.log("User roles loaded:", userGuildRoles);
-        } else {
-            userGuildRoles = [];
-        }
-    } catch (e) {
-        console.warn("Error fetching user roles:", e);
-        userGuildRoles = [];
-    }
-    
-    await loadRoleConfig();
-    updatePermissions();
-    return userGuildRoles;
 }
 
 async function fetchRoleName(roleId) {
@@ -393,7 +435,7 @@ async function fetchRoleName(roleId) {
 }
 
 // ==========================================
-// 5. DISCORD BOT MESSAGES
+// 6. DISCORD BOT MESSAGES
 // ==========================================
 
 async function sendDiscordMessage(channelId, content, embeds = null) {
@@ -605,7 +647,7 @@ async function sendGPRequestToDiscord(requestData, images) {
 }
 
 // ==========================================
-// 6. DISCORD & ROBLOX AUTHENTIFICATION
+// 7. DISCORD & ROBLOX AUTHENTIFICATION
 // ==========================================
 
 async function doLiveCheck() {
@@ -615,7 +657,7 @@ async function doLiveCheck() {
         const res = await fetch(`${BACKEND_URL}/check-member`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUser.id })
+            body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
         });
         
         if (!res.ok) {
@@ -626,9 +668,34 @@ async function doLiveCheck() {
         const data = await res.json();
         
         if (data.isMember === false) {
-            console.log("User is no longer in server");
+            console.log("❌ User left server - forcing logout");
             forceKickUser();
             return false;
+        }
+        
+        const oldRoles = [...userGuildRoles];
+        await fetchUserRoles(currentUser.id, true);
+        
+        const hadAdmin = hasAdminPermission();
+        const hadGpSubmit = hasGpSubmitPermission();
+        
+        updatePermissions();
+        
+        const hasAdminNow = hasAdminPermission();
+        const hasGpSubmitNow = hasGpSubmitPermission();
+        
+        if (hadAdmin && !hasAdminNow) {
+            console.log("⚠️ User lost admin permissions!");
+            showNotify("⚠️ Your admin permissions have been revoked!", "warning");
+            const adminTab = document.getElementById('tabBtnAdmin');
+            if (adminTab && adminTab.classList.contains('active')) {
+                switchTab('Leaderboard');
+            }
+        }
+        
+        if (hadGpSubmit && !hasGpSubmitNow) {
+            console.log("⚠️ User lost GP submit permissions!");
+            showNotify("⚠️ Your GP submit permission has been revoked!", "warning");
         }
         
         return true;
@@ -641,6 +708,32 @@ async function doLiveCheck() {
 function startLiveMemberCheck() {
     if (liveCheckInterval) clearInterval(liveCheckInterval);
     liveCheckInterval = setInterval(doLiveCheck, 300000);
+}
+
+function startRoleSync() {
+    if (roleSyncInterval) clearInterval(roleSyncInterval);
+    roleSyncInterval = setInterval(async () => {
+        if (currentUser) {
+            const oldRoles = [...userGuildRoles];
+            await fetchUserRoles(currentUser.id, true);
+            
+            const oldAdmin = oldRoles.some(r => ADMIN_ROLES.includes(r));
+            const newAdmin = userGuildRoles.some(r => ADMIN_ROLES.includes(r));
+            
+            if (oldAdmin !== newAdmin) {
+                console.log(`🔄 Admin permission changed: ${oldAdmin} -> ${newAdmin}`);
+                updatePermissions();
+                
+                if (!newAdmin) {
+                    const adminTab = document.getElementById('tabBtnAdmin');
+                    if (adminTab && adminTab.classList.contains('active')) {
+                        switchTab('Leaderboard');
+                        showNotify("⚠️ Your admin permissions have been revoked!", "warning");
+                    }
+                }
+            }
+        }
+    }, 120000);
 }
 
 async function sendLoginWebhook(userData) {
@@ -676,7 +769,7 @@ async function handleDiscordLogin(code) {
                 return;
             }
             currentUser = data.user;
-            saveSession(currentUser); // PERSISTENT speichern
+            saveSession(currentUser);
             window.history.replaceState({}, '', REDIRECT_URI);
             await checkRobloxLink();
         } else {
@@ -753,14 +846,13 @@ async function handleRobloxLogin(code) {
 
             console.log("🔄 Synchronisiere Rollen für User:", currentUser.id);
             
-            const syncResponse = await fetch(`${BACKEND_URL}/check-member`, {
+            await fetch(`${BACKEND_URL}/check-member`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
             });
-            console.log("Check-member response:", syncResponse.status);
             
-            const addRegRole = await fetch(`${BACKEND_URL}/update-user-role`, {
+            await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -769,9 +861,8 @@ async function handleRobloxLogin(code) {
                     action: 'add'
                 })
             });
-            console.log("Add REG role response:", addRegRole.status);
             
-            const removeUnregRole = await fetch(`${BACKEND_URL}/update-user-role`, {
+            await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -780,7 +871,6 @@ async function handleRobloxLogin(code) {
                     action: 'remove'
                 })
             });
-            console.log("Remove UNREG role response:", removeUnregRole.status);
 
             showNotify("Roblox account linked successfully!", "success");
             window.location.href = REDIRECT_URI;
@@ -803,7 +893,7 @@ async function validateSessionOnStart() {
         const res = await fetch(`${BACKEND_URL}/check-member`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUser.id })
+            body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
         });
         
         if (res.ok) {
@@ -814,6 +904,7 @@ async function validateSessionOnStart() {
             }
         }
         
+        await fetchUserRoles(currentUser.id, true);
         await checkRobloxLink();
     } catch (e) {
         console.warn("Session validation failed, but keeping session:", e);
@@ -839,7 +930,7 @@ async function checkRobloxLink() {
         
         if (snap.exists() && snap.val().robloxId) {
             if (currentUser && currentUser.id) {
-                await fetchUserRoles(currentUser.id);
+                await fetchUserRoles(currentUser.id, true);
             }
             
             console.log("🔄 checkRobloxLink - Synchronisiere Rollen für User:", currentUser.id);
@@ -872,6 +963,7 @@ async function checkRobloxLink() {
             
             showDashboard();
             startLiveMemberCheck();
+            startRoleSync();
             
         } else {
             const robloxPage = document.getElementById('robloxPage');
@@ -888,11 +980,14 @@ async function checkRobloxLink() {
 }
 
 // ==========================================
-// 7. DASHBOARD & UI
+// 8. DASHBOARD & UI
 // ==========================================
 
-function showDashboard() {
+async function showDashboard() {
     stopMusic();
+    
+    await fetchUserRoles(currentUser.id, true);
+    
     const robloxPage = document.getElementById('robloxPage');
     const mainContent = document.getElementById('mainContent');
     const userWelcome = document.getElementById('userWelcome');
@@ -1023,7 +1118,7 @@ function loadProfileHistory() {
 }
 
 // ==========================================
-// 8. IMAGE UPLOAD & PREVIEW
+// 9. IMAGE UPLOAD & PREVIEW
 // ==========================================
 
 function updateImagePreviews() {
@@ -1058,11 +1153,12 @@ function updateImagePreviews() {
 }
 
 // ==========================================
-// 9. GP SUBMIT FUNCTION
+// 10. GP SUBMIT FUNCTION
 // ==========================================
 
 async function submitGPRequest() {
-    if (!hasGpSubmitPermission()) {
+    const hasPermission = await hasGpSubmitPermissionLive();
+    if (!hasPermission) {
         showNotify("You don't have permission to submit GP requests!", "error");
         return;
     }
@@ -1163,7 +1259,7 @@ async function submitGPRequest() {
 }
 
 // ==========================================
-// 10. ADMIN FUNCTIONS
+// 11. ADMIN FUNCTIONS
 // ==========================================
 
 function loadAdminData() {
@@ -1196,14 +1292,12 @@ function loadAdminData() {
                         <span class="display-name">${escapeHtml(req.discordName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.discordUsername || "Unknown")}</span>
                     </div>
-                 </div>
                 </td>
                 <td>
                     <div class="user-name-cell">
                         <span class="display-name">${escapeHtml(req.robloxName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.robloxUsername || "Unknown")}</span>
                     </div>
-                 </div>
                 </td>
                 <td style="color:#cd7f32; font-weight:bold;">+${req.amount.toLocaleString()} GP</td>
                 <td>
@@ -1218,7 +1312,6 @@ function loadAdminData() {
                             </button>
                         </div>
                     </div>
-                 </div>
                 </td>
             `;
             body.appendChild(row);
@@ -1354,7 +1447,7 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
 };
 
 // ==========================================
-// 11. OWNER PANEL FUNCTIONS
+// 12. OWNER PANEL FUNCTIONS
 // ==========================================
 
 async function loadAdminRolesList() {
@@ -1413,7 +1506,7 @@ window.addAdminRole = async () => {
         const newRoleInput = document.getElementById('newRoleId');
         if (newRoleInput) newRoleInput.value = '';
         await loadAdminRolesList();
-        await fetchUserRoles(currentUser.id);
+        await fetchUserRoles(currentUser.id, true);
     } catch (e) {
         console.error("Error saving role:", e);
         showNotify("Error saving role!", "error");
@@ -1430,7 +1523,7 @@ window.removeAdminRole = async (roleId) => {
         });
         showNotify(`Role removed from admin!`, "success");
         await loadAdminRolesList();
-        await fetchUserRoles(currentUser.id);
+        await fetchUserRoles(currentUser.id, true);
     }
 };
 
@@ -1444,7 +1537,7 @@ window.removeOwnerRole = async (roleId) => {
         });
         showNotify(`Role removed from owner!`, "success");
         await loadAdminRolesList();
-        await fetchUserRoles(currentUser.id);
+        await fetchUserRoles(currentUser.id, true);
     }
 };
 
@@ -1675,7 +1768,7 @@ async function saveGpSubmitRole() {
 }
 
 // ==========================================
-// 12. SAVED MESSAGES FUNCTIONS
+// 13. SAVED MESSAGES FUNCTIONS
 // ==========================================
 
 async function loadSavedMessages() {
@@ -1950,7 +2043,7 @@ function escapeHtml(text) {
 }
 
 // ==========================================
-// 13. EVENT LISTENERS & INITIALIZATION
+// 14. EVENT LISTENERS & INITIALIZATION
 // ==========================================
 
 function initEventListeners() {
@@ -2026,27 +2119,37 @@ function initEventListeners() {
     if (tabBtnSpenden) tabBtnSpenden.addEventListener('click', () => switchTab('Spenden'));
     if (tabBtnLeaderboard) tabBtnLeaderboard.addEventListener('click', () => switchTab('Leaderboard'));
     if (tabBtnProfile) tabBtnProfile.addEventListener('click', () => switchTab('Profile'));
-    if (tabBtnAdmin) tabBtnAdmin.addEventListener('click', () => {
-        if (hasAdminPermission()) {
-            switchTab('Admin');
-            loadAdminData();
-        } else {
-            showNotify("You don't have permission to access Admin Panel!", "error");
-        }
-    });
-    if (tabBtnOwner) tabBtnOwner.addEventListener('click', () => {
-        if (hasOwnerPermission()) {
-            switchTab('Owner');
-            loadAdminRolesList();
-            loadChannelConfigUI();
-            loadKickLogs();
-            loadSavedMessages();
-            loadSystemConfigUI();
-            loadRegisteredUsersCount();
-        } else {
-            showNotify("You don't have permission to access Owner Panel!", "error");
-        }
-    });
+    
+    if (tabBtnAdmin) {
+        tabBtnAdmin.addEventListener('click', async () => {
+            const hasAdmin = await hasAdminPermissionLive();
+            if (hasAdmin) {
+                switchTab('Admin');
+                loadAdminData();
+            } else {
+                showNotify("You don't have permission to access Admin Panel!", "error");
+                tabBtnAdmin.style.display = 'none';
+            }
+        });
+    }
+    
+    if (tabBtnOwner) {
+        tabBtnOwner.addEventListener('click', async () => {
+            const hasOwner = await hasOwnerPermissionLive();
+            if (hasOwner) {
+                switchTab('Owner');
+                loadAdminRolesList();
+                loadChannelConfigUI();
+                loadKickLogs();
+                loadSavedMessages();
+                loadSystemConfigUI();
+                loadRegisteredUsersCount();
+            } else {
+                showNotify("You don't have permission to access Owner Panel!", "error");
+                tabBtnOwner.style.display = 'none';
+            }
+        });
+    }
     
     if (addRoleBtn) addRoleBtn.addEventListener('click', window.addAdminRole);
     if (saveChannelConfigBtn) saveChannelConfigBtn.addEventListener('click', saveChannelConfig);
@@ -2074,18 +2177,16 @@ function initEventListeners() {
 }
 
 // ==========================================
-// 14. SESSION & VISIBILITY HANDLERS
+// 15. SESSION & VISIBILITY HANDLERS
 // ==========================================
 
 function setupSessionHandlers() {
-    // Session vor dem Schließen speichern
     window.addEventListener('beforeunload', () => {
         if (currentUser) {
             saveSession(currentUser);
         }
     });
 
-    // Bei Tab-Wechsel sanft prüfen
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && currentUser) {
             if (reloadTimeout) clearTimeout(reloadTimeout);
@@ -2099,7 +2200,7 @@ function setupSessionHandlers() {
 }
 
 // ==========================================
-// 15. APP START (AUTH CHECK)
+// 16. APP START (AUTH CHECK)
 // ==========================================
 
 function init() {
@@ -2117,7 +2218,6 @@ function init() {
             handleRobloxLogin(code);
         }
     } else {
-        // Versuche gespeicherte Session zu laden
         const savedUser = loadSession();
         if (savedUser) {
             try {
