@@ -23,7 +23,7 @@ let systemConfig = {
     limits: {
         maxImagesPerRequest: 3
     },
-    musicUrl: 'https://www.youtube.com/watch?v=3Ion7Vwt0Y8&list=RD3Ion7Vwt0Y8&start_radio=1',
+    musicUrl: 'https://www.youtube.com/embed/BtEkzZoUCpw?autoplay=1&loop=1',
     updateInterval: 60
 };
 
@@ -65,6 +65,8 @@ let allUsersData = {};
 let liveCheckInterval = null;
 let userGuildRoles = [];
 let currentEditingMessageId = null;
+let isCheckingSession = false;
+let reloadTimeout = null;
 
 // ==========================================
 // 2. LOAD CONFIGURATIONS FROM FIREBASE
@@ -376,39 +378,28 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
     try {
         let newNickname;
         
-        // Wenn Anzeigename und Benutzername identisch sind
         if (robloxName === robloxUsername) {
             newNickname = `(@${robloxUsername})`;
         } else {
             newNickname = `${robloxName} (@${robloxUsername})`;
         }
         
-        // Discord Nickname Limit: 32 Zeichen
         if (newNickname.length > 32) {
             if (robloxName === robloxUsername) {
-                // Gleiche Namen: Username kürzen (notwendig)
-                const maxUsernameLength = 28; // 32 - 4 für "(@)"
+                const maxUsernameLength = 28;
                 const shortUsername = robloxUsername.substring(0, maxUsernameLength);
                 newNickname = `(@${shortUsername})`;
             } else {
-                // Unterschiedliche Namen: USERNAME bleibt VOLLSTÄNDIG
-                // Anzeigename wird gekürzt
-                
-                // Berechne maximalen Platz für den Anzeigenamen
-                // Format: "ANGEZEIGTERNAME (@VOLLER_USERNAME)"
-                // Länge = Anzeigename.length + username.length + 5
                 const usernameLength = robloxUsername.length;
-                const maxDisplayNameLength = 32 - usernameLength - 5; // -5 für " (@)" und Leerzeichen
+                const maxDisplayNameLength = 32 - usernameLength - 5;
                 
                 if (maxDisplayNameLength >= 3) {
-                    // Anzeigename kürzen wenn nötig
                     let shortDisplayName = robloxName;
                     if (robloxName.length > maxDisplayNameLength) {
                         shortDisplayName = robloxName.substring(0, maxDisplayNameLength - 3) + '...';
                     }
                     newNickname = `${shortDisplayName} (@${robloxUsername})`;
                 } else {
-                    // Fallback: Nur Username anzeigen
                     newNickname = `(@${robloxUsername})`;
                 }
             }
@@ -589,32 +580,37 @@ async function sendGPRequestToDiscord(requestData, images) {
 
 async function doLiveCheck() {
     if (!currentUser) return false;
+    
     try {
         const res = await fetch(`${BACKEND_URL}/check-member`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.id })
         });
+        
         if (!res.ok) {
-            forceKickUser();
-            return false;
+            console.warn(`Check-member API error: ${res.status}`);
+            return true;
         }
+        
         const data = await res.json();
+        
         if (data.isMember === false) {
+            console.log("User is no longer in server");
             forceKickUser();
             return false;
         }
+        
         return true;
     } catch (e) {
-        console.warn("Live check failed:", e);
-        forceKickUser();
-        return false;
+        console.warn("Live check failed, keeping session:", e);
+        return true;
     }
 }
 
 function startLiveMemberCheck() {
     if (liveCheckInterval) clearInterval(liveCheckInterval);
-    liveCheckInterval = setInterval(doLiveCheck, 30000);
+    liveCheckInterval = setInterval(doLiveCheck, 300000);
 }
 
 async function sendLoginWebhook(userData) {
@@ -698,7 +694,6 @@ async function handleRobloxLogin(code) {
             const rId = data.robloxUser.sub;
             const dDisplayName = currentUser.global_name || currentUser.username || "Unknown";
             
-            // Discord-ID als Key
             const userRef = ref(db, `users/${currentUser.id}`);
             const snap = await get(userRef);
             let currentGP = snap.exists() && snap.val().totalGP ? snap.val().totalGP : 0;
@@ -726,10 +721,8 @@ async function handleRobloxLogin(code) {
                 robloxId: rId
             });
 
-            // 🔥 Rollen synchronisieren - UNREG entfernen, REG hinzufügen
             console.log("🔄 Synchronisiere Rollen für User:", currentUser.id);
             
-            // 1. Über check-member (aktualisiert beide Rollen)
             const syncResponse = await fetch(`${BACKEND_URL}/check-member`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -737,7 +730,6 @@ async function handleRobloxLogin(code) {
             });
             console.log("Check-member response:", syncResponse.status);
             
-            // 2. EXPLIZIT: REG Rolle hinzufügen (1503217692843180083)
             const addRegRole = await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -749,7 +741,6 @@ async function handleRobloxLogin(code) {
             });
             console.log("Add REG role response:", addRegRole.status);
             
-            // 3. EXPLIZIT: UNREG Rolle entfernen (1503218754643820624)
             const removeUnregRole = await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -800,6 +791,34 @@ async function updateUserDiscordRole(userId, roleId, add = true) {
     }
 }
 
+async function validateSessionOnStart() {
+    if (isCheckingSession) return;
+    isCheckingSession = true;
+    
+    try {
+        const res = await fetch(`${BACKEND_URL}/check-member`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.id })
+        });
+        
+        if (res.ok) {
+            const data = await res.json();
+            if (data.isMember === false) {
+                forceKickUser();
+                return;
+            }
+        }
+        
+        await checkRobloxLink();
+    } catch (e) {
+        console.warn("Session validation failed, but keeping session:", e);
+        await checkRobloxLink();
+    } finally {
+        isCheckingSession = false;
+    }
+}
+
 async function checkRobloxLink() {
     try {
         const isStillMember = await doLiveCheck();
@@ -810,7 +829,6 @@ async function checkRobloxLink() {
         await loadSystemConfig();
         await loadTestMode();
         
-        // Discord-ID als Key
         const snap = await get(ref(db, `users/${currentUser.id}`));
         const loginPage = document.getElementById('loginPage');
         if (loginPage) loginPage.classList.add('hidden');
@@ -820,17 +838,14 @@ async function checkRobloxLink() {
                 await fetchUserRoles(currentUser.id);
             }
             
-            // 🔥 Rollen synchronisieren - UNREG entfernen, REG hinzufügen
             console.log("🔄 checkRobloxLink - Synchronisiere Rollen für User:", currentUser.id);
             
-            // 1. Über check-member
             await fetch(`${BACKEND_URL}/check-member`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id, updateRoles: true })
             });
             
-            // 2. EXPLIZIT: REG Rolle hinzufügen (1503217692843180083)
             await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -841,7 +856,6 @@ async function checkRobloxLink() {
                 })
             });
             
-            // 3. EXPLIZIT: UNREG Rolle entfernen (1503218754643820624)
             await fetch(`${BACKEND_URL}/update-user-role`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1079,7 +1093,6 @@ async function submitGPRequest() {
     }
 
     try {
-        // 🔥 NEU: Discord-ID als Key
         const userRef = ref(db, `users/${currentUser.id}`);
         const snap = await get(userRef);
         const userData = snap.val() || {};
@@ -1096,7 +1109,7 @@ async function submitGPRequest() {
 
         await set(newReqRef, {
             id: reqKey,
-            dbKey: currentUser.id, // 🔥 Discord-ID als dbKey
+            dbKey: currentUser.id,
             userId: dId,
             discordName: dName,
             discordUsername: dUser,
@@ -1179,14 +1192,12 @@ function loadAdminData() {
                         <span class="display-name">${escapeHtml(req.discordName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.discordUsername || "Unknown")}</span>
                     </div>
-                 </div>
                 </td>
                 <td>
                     <div class="user-name-cell">
                         <span class="display-name">${escapeHtml(req.robloxName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.robloxUsername || "Unknown")}</span>
                     </div>
-                 </div>
                 </td>
                 <td style="color:#cd7f32; font-weight:bold;">+${req.amount.toLocaleString()} GP</td>
                 <td>
@@ -1201,7 +1212,6 @@ function loadAdminData() {
                             </button>
                         </div>
                     </div>
-                 </div>
                 </td>
             `;
             body.appendChild(row);
@@ -1255,7 +1265,6 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
             processedByName: currentUser.global_name || currentUser.username
         });
 
-        // 🔥 NEU: passedDbKey ist die Discord-ID
         const dbKey = passedDbKey;
         let newTotal = 0;
         const userRef = ref(db, `users/${dbKey}`);
@@ -1269,7 +1278,6 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
             }
         }
 
-        // Discord-Nachricht aktualisieren
         try {
             const panelActionRes = await fetch(`${BACKEND_URL}/panel-action`, {
                 method: 'POST',
@@ -1361,7 +1369,7 @@ async function loadAdminRolesList() {
             html += `<tr><td class="role-name">${escapeHtml(roleName)}</td><td class="role-id">${escapeHtml(role)}</td><td><span class="status-badge status-pending">Owner</span></td><td><button class="btn-small btn-remove-role" onclick="removeOwnerRole('${role}')">Remove</button></td></tr>`;
         }
         
-        html += '</tbody></tr>';
+        html += '</tbody></table>';
         container.innerHTML = html;
     } catch (e) {
         console.error("Error loading roles:", e);
@@ -1784,7 +1792,6 @@ async function saveMessage() {
             showNotify(`Message "${name}" saved successfully!`, "success");
         }
         
-        // Clear form
         const messageName = document.getElementById('messageName');
         const messageChannelId = document.getElementById('messageChannelId');
         const messageContent = document.getElementById('messageContent');
@@ -1981,7 +1988,6 @@ function initEventListeners() {
     if (rbxLogoutBtn) rbxLogoutBtn.addEventListener('click', async () => {
         if (!confirm("Disconnect Roblox?")) return;
         try {
-            // 🔥 NEU: Discord-ID als Key
             await update(ref(db, `users/${currentUser.id}`), {
                 robloxId: null,
                 robloxName: null,
@@ -2061,11 +2067,35 @@ function initEventListeners() {
 }
 
 // ==========================================
-// 13. APP START (AUTH CHECK)
+// 13. SESSION & VISIBILITY HANDLERS
+// ==========================================
+
+function setupSessionHandlers() {
+    window.addEventListener('beforeunload', () => {
+        if (currentUser) {
+            sessionStorage.setItem('pn_session', JSON.stringify(currentUser));
+        }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && currentUser) {
+            if (reloadTimeout) clearTimeout(reloadTimeout);
+            reloadTimeout = setTimeout(() => {
+                if (!isCheckingSession) {
+                    validateSessionOnStart();
+                }
+            }, 1000);
+        }
+    });
+}
+
+// ==========================================
+// 14. APP START (AUTH CHECK)
 // ==========================================
 
 function init() {
     initEventListeners();
+    setupSessionHandlers();
     
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
@@ -2082,10 +2112,14 @@ function init() {
         if (saved) {
             try {
                 currentUser = JSON.parse(saved);
-                if (!currentUser.id) throw new Error("Broken session");
-                checkRobloxLink();
+                if (!currentUser || !currentUser.id) {
+                    throw new Error("Broken session");
+                }
+                validateSessionOnStart();
             } catch (e) {
+                console.warn("Session invalid:", e);
                 sessionStorage.removeItem('pn_session');
+                currentUser = null;
                 playLoginMusic();
             }
         } else {
