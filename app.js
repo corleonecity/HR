@@ -41,7 +41,7 @@ const REDIRECT_URI = 'https://corleonecity.github.io/SwordArtOnline/';
 
 // Firebase Imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, get, update, push, remove, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, get, update, push, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -69,7 +69,66 @@ let isCheckingSession = false;
 let reloadTimeout = null;
 
 // ==========================================
-// 2. LOAD CONFIGURATIONS FROM FIREBASE
+// 2. SESSION MANAGEMENT (PERSISTENT)
+// ==========================================
+
+// SESSION KEY für localStorage
+const SESSION_KEY = 'sao_persistent_session';
+
+// Session speichern (persistent)
+function saveSession(user) {
+    if (user) {
+        const sessionData = {
+            user: user,
+            savedAt: Date.now(),
+            expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 Tage gültig
+        };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+        console.log("✅ Session saved to localStorage, expires in 7 days");
+    }
+}
+
+// Session laden (persistent)
+function loadSession() {
+    try {
+        const saved = localStorage.getItem(SESSION_KEY);
+        if (!saved) return null;
+        
+        const sessionData = JSON.parse(saved);
+        
+        // Prüfen ob Session abgelaufen ist (7 Tage)
+        if (sessionData.expiresAt && sessionData.expiresAt < Date.now()) {
+            console.log("⏰ Session expired");
+            localStorage.removeItem(SESSION_KEY);
+            return null;
+        }
+        
+        // Prüfen ob User-Daten existieren
+        if (!sessionData.user || !sessionData.user.id) {
+            console.log("❌ Invalid session data");
+            localStorage.removeItem(SESSION_KEY);
+            return null;
+        }
+        
+        console.log(`✅ Session loaded for user ${sessionData.user.id}, valid until ${new Date(sessionData.expiresAt).toLocaleString()}`);
+        return sessionData.user;
+    } catch (e) {
+        console.error("Error loading session:", e);
+        localStorage.removeItem(SESSION_KEY);
+        return null;
+    }
+}
+
+// Session löschen
+function clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+    if (liveCheckInterval) clearInterval(liveCheckInterval);
+    currentUser = null;
+    console.log("🗑️ Session cleared");
+}
+
+// ==========================================
+// 3. LOAD CONFIGURATIONS FROM FIREBASE
 // ==========================================
 
 async function loadRoleConfig() {
@@ -161,7 +220,7 @@ function updateTestModeIndicator() {
 }
 
 // ==========================================
-// 3. HELPER FUNCTIONS
+// 4. HELPER FUNCTIONS
 // ==========================================
 
 function playLoginMusic() {
@@ -221,7 +280,7 @@ function switchTab(tabName) {
 
 function forceKickUser() {
     if (liveCheckInterval) clearInterval(liveCheckInterval);
-    sessionStorage.removeItem('pn_session');
+    clearSession(); // Session löschen
     currentUser = null;
     const mainContent = document.getElementById('mainContent');
     const robloxPage = document.getElementById('robloxPage');
@@ -230,9 +289,10 @@ function forceKickUser() {
     
     if (mainContent) mainContent.classList.add('hidden');
     if (robloxPage) robloxPage.classList.add('hidden');
-    if (loginPage) loginPage.classList.add('hidden');
-    if (noPermissionPage) noPermissionPage.classList.remove('hidden');
+    if (loginPage) loginPage.classList.remove('hidden');
+    if (noPermissionPage) noPermissionPage.classList.add('hidden');
     stopMusic();
+    showNotify("Your session has expired. Please login again.", "warning");
 }
 
 function hasAdminPermission() {
@@ -333,7 +393,7 @@ async function fetchRoleName(roleId) {
 }
 
 // ==========================================
-// 4. DISCORD BOT MESSAGES
+// 5. DISCORD BOT MESSAGES
 // ==========================================
 
 async function sendDiscordMessage(channelId, content, embeds = null) {
@@ -454,36 +514,6 @@ async function sendLoginToDiscord(userData) {
     return sendDiscordMessage(loginLogsChannel, null, [embed]);
 }
 
-async function sendLeftUserToDiscord(userData) {
-    const channels = await getChannelConfig();
-    const leaveLogsChannel = channels.CH_LEAVE_LOGS;
-    
-    if (!leaveLogsChannel) {
-        console.warn("CH_LEAVE_LOGS not configured - skipping leave notification");
-        return false;
-    }
-    
-    const adminRoleId = ADMIN_ROLES[0] || '1503609455466643547';
-    
-    const robloxProfileLink = userData.robloxUsername 
-        ? `https://www.roblox.com/user.aspx?username=${userData.robloxUsername}`
-        : "";
-    
-    const embed = {
-        title: "🚨 User has left the server!",
-        url: "https://corleonecity.github.io/SwordArtOnline/",
-        color: parseInt(systemConfig.embedColors.reject.replace('#', ''), 16),
-        fields: [
-            { name: "💬 Discord", value: `**Display:** ${userData.discordName || "Unknown"}\n**User:** @${userData.discordUsername || "Unknown"}\n**Ping:** <@${userData.id}>`, inline: true },
-            { name: "🎮 Roblox", value: `**Display:** ${userData.robloxName || "Unknown"}\n**User:** @${userData.robloxUsername || "Unknown"}\n**Profile:** [Click Here](${robloxProfileLink})`, inline: true }
-        ],
-        timestamp: new Date().toISOString(),
-        footer: { text: "SwordArtOnline Panel" }
-    };
-    
-    return sendDiscordMessage(leaveLogsChannel, `<@&${adminRoleId}>`, [embed]);
-}
-
 async function sendGPRequestToDiscord(requestData, images) {
     const formData = new FormData();
     
@@ -575,7 +605,7 @@ async function sendGPRequestToDiscord(requestData, images) {
 }
 
 // ==========================================
-// 5. DISCORD & ROBLOX AUTHENTIFICATION
+// 6. DISCORD & ROBLOX AUTHENTIFICATION
 // ==========================================
 
 async function doLiveCheck() {
@@ -646,7 +676,7 @@ async function handleDiscordLogin(code) {
                 return;
             }
             currentUser = data.user;
-            sessionStorage.setItem('pn_session', JSON.stringify(currentUser));
+            saveSession(currentUser); // PERSISTENT speichern
             window.history.replaceState({}, '', REDIRECT_URI);
             await checkRobloxLink();
         } else {
@@ -664,12 +694,12 @@ async function handleRobloxLogin(code) {
     try {
         showLoading(true, 'robloxLoginBtn');
         
-        const savedSession = sessionStorage.getItem('pn_session');
+        const savedSession = loadSession();
         if (!savedSession) {
             throw new Error("No Discord session found. Please login with Discord first.");
         }
         
-        currentUser = JSON.parse(savedSession);
+        currentUser = savedSession;
         
         const res = await fetch(`${BACKEND_URL}/roblox-token`, {
             method: 'POST',
@@ -762,32 +792,6 @@ async function handleRobloxLogin(code) {
         showNotify(`Linking Error: ${e.message}`, "error");
     } finally {
         showLoading(false, 'robloxLoginBtn');
-    }
-}
-
-async function updateUserDiscordRole(userId, roleId, add = true) {
-    try {
-        const response = await fetch(`${BACKEND_URL}/update-user-role`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                userId: userId, 
-                roleId: roleId,
-                action: add ? 'add' : 'remove',
-                guildId: '1439377447630930084'
-            })
-        });
-        
-        if (response.ok) {
-            console.log(`Role ${roleId} ${add ? 'added to' : 'removed from'} ${userId}`);
-            return true;
-        } else {
-            console.error(`Failed to update role: ${await response.text()}`);
-            return false;
-        }
-    } catch (e) {
-        console.error(`Role update error:`, e);
-        return false;
     }
 }
 
@@ -884,7 +888,7 @@ async function checkRobloxLink() {
 }
 
 // ==========================================
-// 6. DASHBOARD & UI
+// 7. DASHBOARD & UI
 // ==========================================
 
 function showDashboard() {
@@ -1019,7 +1023,7 @@ function loadProfileHistory() {
 }
 
 // ==========================================
-// 7. IMAGE UPLOAD & PREVIEW
+// 8. IMAGE UPLOAD & PREVIEW
 // ==========================================
 
 function updateImagePreviews() {
@@ -1054,7 +1058,7 @@ function updateImagePreviews() {
 }
 
 // ==========================================
-// 8. GP SUBMIT FUNCTION
+// 9. GP SUBMIT FUNCTION
 // ==========================================
 
 async function submitGPRequest() {
@@ -1159,7 +1163,7 @@ async function submitGPRequest() {
 }
 
 // ==========================================
-// 9. ADMIN FUNCTIONS
+// 10. ADMIN FUNCTIONS
 // ==========================================
 
 function loadAdminData() {
@@ -1192,12 +1196,14 @@ function loadAdminData() {
                         <span class="display-name">${escapeHtml(req.discordName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.discordUsername || "Unknown")}</span>
                     </div>
+                 </div>
                 </td>
                 <td>
                     <div class="user-name-cell">
                         <span class="display-name">${escapeHtml(req.robloxName || "Unknown")}</span>
                         <span class="username-handle">@${escapeHtml(req.robloxUsername || "Unknown")}</span>
                     </div>
+                 </div>
                 </td>
                 <td style="color:#cd7f32; font-weight:bold;">+${req.amount.toLocaleString()} GP</td>
                 <td>
@@ -1212,6 +1218,7 @@ function loadAdminData() {
                             </button>
                         </div>
                     </div>
+                 </div>
                 </td>
             `;
             body.appendChild(row);
@@ -1347,7 +1354,7 @@ window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, ro
 };
 
 // ==========================================
-// 10. OWNER PANEL FUNCTIONS
+// 11. OWNER PANEL FUNCTIONS
 // ==========================================
 
 async function loadAdminRolesList() {
@@ -1668,7 +1675,7 @@ async function saveGpSubmitRole() {
 }
 
 // ==========================================
-// 11. SAVED MESSAGES FUNCTIONS
+// 12. SAVED MESSAGES FUNCTIONS
 // ==========================================
 
 async function loadSavedMessages() {
@@ -1943,7 +1950,7 @@ function escapeHtml(text) {
 }
 
 // ==========================================
-// 12. EVENT LISTENERS & INITIALIZATION
+// 13. EVENT LISTENERS & INITIALIZATION
 // ==========================================
 
 function initEventListeners() {
@@ -1981,7 +1988,7 @@ function initEventListeners() {
     });
     
     if (dcLogoutBtn) dcLogoutBtn.addEventListener('click', () => {
-        sessionStorage.removeItem('pn_session');
+        clearSession();
         window.location.href = REDIRECT_URI;
     });
     
@@ -2067,16 +2074,18 @@ function initEventListeners() {
 }
 
 // ==========================================
-// 13. SESSION & VISIBILITY HANDLERS
+// 14. SESSION & VISIBILITY HANDLERS
 // ==========================================
 
 function setupSessionHandlers() {
+    // Session vor dem Schließen speichern
     window.addEventListener('beforeunload', () => {
         if (currentUser) {
-            sessionStorage.setItem('pn_session', JSON.stringify(currentUser));
+            saveSession(currentUser);
         }
     });
 
+    // Bei Tab-Wechsel sanft prüfen
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden && currentUser) {
             if (reloadTimeout) clearTimeout(reloadTimeout);
@@ -2090,7 +2099,7 @@ function setupSessionHandlers() {
 }
 
 // ==========================================
-// 14. APP START (AUTH CHECK)
+// 15. APP START (AUTH CHECK)
 // ==========================================
 
 function init() {
@@ -2108,17 +2117,19 @@ function init() {
             handleRobloxLogin(code);
         }
     } else {
-        const saved = sessionStorage.getItem('pn_session');
-        if (saved) {
+        // Versuche gespeicherte Session zu laden
+        const savedUser = loadSession();
+        if (savedUser) {
             try {
-                currentUser = JSON.parse(saved);
+                currentUser = savedUser;
                 if (!currentUser || !currentUser.id) {
                     throw new Error("Broken session");
                 }
+                console.log("✅ Found saved session, validating...");
                 validateSessionOnStart();
             } catch (e) {
                 console.warn("Session invalid:", e);
-                sessionStorage.removeItem('pn_session');
+                clearSession();
                 currentUser = null;
                 playLoginMusic();
             }
