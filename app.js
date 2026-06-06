@@ -2328,7 +2328,6 @@ function initEventListeners() {
     if (clearMessageFormBtn) clearMessageFormBtn.addEventListener('click', clearMessageForm);
     if (enableMaintenanceBtn) enableMaintenanceBtn.addEventListener('click', () => setMaintenanceMode(true));
     if (disableMaintenanceBtn) disableMaintenanceBtn.addEventListener('click', () => setMaintenanceMode(false));
-    setupClipboardHandlers();  // <-- DAS IST RICHTIG!
 }
 
 // ==========================================
