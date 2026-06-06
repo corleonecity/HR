@@ -1119,147 +1119,88 @@ function loadProfileHistory() {
 }
 
 // ==========================================
-// CLIPBOARD BUTTON - DIREKTES EINFÜGEN
+// SIMPLE CLIPBOARD PASTE - FUNKTIONIERT IMMER
 // ==========================================
 
 function initClipboardButton() {
-    const clipboardBtn = document.getElementById('clipboardPasteBtn');
-    const statusEl = document.getElementById('clipboardStatus');
+    const pasteArea = document.getElementById('pasteArea');
+    const statusEl = document.getElementById('pasteStatus');
     
-    if (!clipboardBtn) return;
+    if (!pasteArea) return;
     
-    // Funktion zum Einfügen aus Zwischenablage
-    async function pasteFromClipboard() {
+    // Klick auf die Fläche = Fokus setzen
+    pasteArea.addEventListener('click', () => {
+        pasteArea.focus();
+        pasteArea.style.borderColor = '#48bb78';
         if (statusEl) {
-            statusEl.textContent = '📋 Lese Zwischenablage...';
-            statusEl.style.color = '#ffd700';
+            statusEl.textContent = '✅ Bereit! Drücke jetzt Ctrl+V';
+            statusEl.style.color = '#48bb78';
         }
-        
-        try {
-            // Versuche mit Clipboard API zu lesen
-            if (navigator.clipboard && navigator.clipboard.read) {
-                const permission = await navigator.permissions.query({ name: 'clipboard-read' });
-                
-                if (permission.state === 'granted' || permission.state === 'prompt') {
-                    const clipboardItems = await navigator.clipboard.read();
-                    
-                    for (const item of clipboardItems) {
-                        const imageTypes = item.types.filter(type => type.startsWith('image/'));
-                        
-                        for (const type of imageTypes) {
-                            const blob = await item.getType(type);
-                            if (blob) {
-                                const maxImages = systemConfig.limits.maxImagesPerRequest;
-                                const availableSlots = maxImages - selectedFiles.length;
-                                
-                                if (availableSlots <= 0) {
-                                    showNotify(`Maximum ${maxImages} images allowed!`, "warning");
-                                    if (statusEl) {
-                                        statusEl.textContent = `❌ Max ${maxImages} Bilder erreicht`;
-                                        statusEl.style.color = '#f56565';
-                                        setTimeout(() => {
-                                            statusEl.textContent = '';
-                                        }, 3000);
-                                    }
-                                    return;
-                                }
-                                
-                                const fileName = `clipboard_${Date.now()}.png`;
-                                const file = new File([blob], fileName, { type: type });
-                                selectedFiles.push(file);
-                                updateImagePreviews();
-                                
-                                showNotify("✅ Bild aus Zwischenablage eingefügt!", "success");
-                                if (statusEl) {
-                                    statusEl.textContent = '✅ Bild eingefügt!';
-                                    statusEl.style.color = '#48bb78';
-                                    setTimeout(() => {
-                                        statusEl.textContent = '';
-                                    }, 2000);
-                                }
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Fallback: Wenn API nicht funktioniert
-            if (statusEl) {
-                statusEl.textContent = '⚠️ Bitte Ctrl+V drücken (Sicherheitseinschränkung)';
-                statusEl.style.color = '#ffd700';
-                setTimeout(() => {
-                    statusEl.textContent = '';
-                }, 3000);
-            }
-            showNotify("Drücke jetzt Ctrl+V um das Bild einzufügen", "info");
-            
-        } catch (err) {
-            console.error("Clipboard error:", err);
-            
-            if (err.name === 'NotAllowedError') {
-                if (statusEl) {
-                    statusEl.textContent = '🔒 Bitte erlaubnis erteilen und nochmal klicken';
-                    statusEl.style.color = '#f56565';
-                }
-                showNotify("Browser erlaubt keinen Zugriff. Bitte Ctrl+V drücken.", "warning");
-            } else {
-                if (statusEl) {
-                    statusEl.textContent = '❌ Bildeinfügen fehlgeschlagen. Versuche Rechtsklick → Einfügen';
-                    statusEl.style.color = '#f56565';
-                }
-            }
-        }
-    }
-    
-    // Button Click = Direktes Einfügen
-    clipboardBtn.addEventListener('click', async () => {
-        await pasteFromClipboard();
+        setTimeout(() => {
+            pasteArea.style.borderColor = '#5865F2';
+        }, 1500);
     });
     
-    // Zusätzlich: Wenn Ctrl+V gedrückt wird und Button fokussiert ist
-    clipboardBtn.addEventListener('keydown', async (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-            e.preventDefault();
-            await pasteFromClipboard();
-        }
-    });
+    // Damit die Fläche fokussierbar ist
+    pasteArea.setAttribute('tabindex', '0');
+    pasteArea.style.outline = 'none';
     
-    // Globales Paste Event als Fallback
-    document.addEventListener('paste', (e) => {
-        // Nur wenn Button vor kurzem geklickt wurde
-        const wasClicked = clipboardBtn === document.activeElement;
-        if (!wasClicked) return;
+    // Globales Paste Event - funktioniert immer
+    document.addEventListener('paste', (event) => {
+        // Prüfen ob die PasteArea fokussiert ist ODER der Button vorher geklickt wurde
+        const isPasteAreaFocused = document.activeElement === pasteArea;
         
-        const items = e.clipboardData?.items;
+        if (!isPasteAreaFocused) return;
+        
+        const items = event.clipboardData?.items;
+        if (!items) return;
+        
+        let imageFound = false;
+        
         for (let i = 0; i < items.length; i++) {
             if (items[i].type.indexOf('image') !== -1) {
-                e.preventDefault();
+                event.preventDefault();
                 const file = items[i].getAsFile();
                 if (file) {
                     const maxImages = systemConfig.limits.maxImagesPerRequest;
                     const availableSlots = maxImages - selectedFiles.length;
                     
-                    if (availableSlots > 0) {
-                        const fileName = `clipboard_${Date.now()}.png`;
-                        const renamedFile = new File([file], fileName, { type: file.type });
-                        selectedFiles.push(renamedFile);
-                        updateImagePreviews();
-                        showNotify("✅ Bild eingefügt!", "success");
-                        
+                    if (availableSlots <= 0) {
+                        showNotify(`Maximum ${maxImages} images allowed!`, "warning");
                         if (statusEl) {
-                            statusEl.textContent = '✅ Bild eingefügt!';
-                            statusEl.style.color = '#48bb78';
+                            statusEl.textContent = `❌ Max ${maxImages} Bilder erreicht`;
+                            statusEl.style.color = '#f56565';
                             setTimeout(() => { statusEl.textContent = ''; }, 2000);
                         }
+                        return;
                     }
+                    
+                    const fileName = `paste_${Date.now()}.png`;
+                    const renamedFile = new File([file], fileName, { type: file.type });
+                    selectedFiles.push(renamedFile);
+                    updateImagePreviews();
+                    
+                    imageFound = true;
+                    showNotify("✅ Bild eingefügt!", "success");
+                    
+                    if (statusEl) {
+                        statusEl.textContent = '✅ Bild eingefügt!';
+                        statusEl.style.color = '#48bb78';
+                        setTimeout(() => { statusEl.textContent = ''; }, 2000);
+                    }
+                    break;
                 }
-                break;
             }
+        }
+        
+        if (!imageFound && statusEl) {
+            statusEl.textContent = '❌ Kein Bild in der Zwischenablage. Screenshot machen!';
+            statusEl.style.color = '#f56565';
+            setTimeout(() => { statusEl.textContent = ''; }, 2000);
         }
     });
     
-    console.log("✅ Clipboard Button initialisiert");
+    console.log("✅ Paste Area initialisiert");
 }
 
 // Starte die Funktion
