@@ -1119,7 +1119,7 @@ function loadProfileHistory() {
 }
 
 // ==========================================
-// CLIPBOARD BUTTON - ISOLATED VERSION
+// CLIPBOARD BUTTON - DIREKTES EINFÜGEN
 // ==========================================
 
 function initClipboardButton() {
@@ -1128,115 +1128,113 @@ function initClipboardButton() {
     
     if (!clipboardBtn) return;
     
-    clipboardBtn.addEventListener('click', async () => {
+    // Funktion zum Einfügen aus Zwischenablage
+    async function pasteFromClipboard() {
         if (statusEl) {
-            statusEl.textContent = '📋 Press Ctrl+V now to paste your image...';
+            statusEl.textContent = '📋 Lese Zwischenablage...';
             statusEl.style.color = '#ffd700';
         }
         
-        // Focus the button so Ctrl+V works
-        clipboardBtn.focus();
-        
-        // Show notification
-        showNotify("✅ Button focused! Now press Ctrl+V to paste image", "info");
-    });
-    
-    // Listen for Ctrl+V when button is focused
-    clipboardBtn.addEventListener('keydown', async (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-            e.preventDefault();
-            
-            if (statusEl) {
-                statusEl.textContent = '⏳ Reading clipboard...';
-                statusEl.style.color = '#ffd700';
-            }
-            
-            try {
-                const items = e.clipboardData?.items;
-                if (!items) {
-                    throw new Error('No clipboard data');
-                }
+        try {
+            // Versuche mit Clipboard API zu lesen
+            if (navigator.clipboard && navigator.clipboard.read) {
+                const permission = await navigator.permissions.query({ name: 'clipboard-read' });
                 
-                let imageFound = false;
-                
-                for (let i = 0; i < items.length; i++) {
-                    if (items[i].type.indexOf('image') !== -1) {
-                        const file = items[i].getAsFile();
-                        if (file) {
-                            const maxImages = systemConfig.limits.maxImagesPerRequest;
-                            const availableSlots = maxImages - selectedFiles.length;
-                            
-                            if (availableSlots <= 0) {
-                                showNotify(`Maximum ${maxImages} images allowed!`, "warning");
+                if (permission.state === 'granted' || permission.state === 'prompt') {
+                    const clipboardItems = await navigator.clipboard.read();
+                    
+                    for (const item of clipboardItems) {
+                        const imageTypes = item.types.filter(type => type.startsWith('image/'));
+                        
+                        for (const type of imageTypes) {
+                            const blob = await item.getType(type);
+                            if (blob) {
+                                const maxImages = systemConfig.limits.maxImagesPerRequest;
+                                const availableSlots = maxImages - selectedFiles.length;
+                                
+                                if (availableSlots <= 0) {
+                                    showNotify(`Maximum ${maxImages} images allowed!`, "warning");
+                                    if (statusEl) {
+                                        statusEl.textContent = `❌ Max ${maxImages} Bilder erreicht`;
+                                        statusEl.style.color = '#f56565';
+                                        setTimeout(() => {
+                                            statusEl.textContent = '';
+                                        }, 3000);
+                                    }
+                                    return;
+                                }
+                                
+                                const fileName = `clipboard_${Date.now()}.png`;
+                                const file = new File([blob], fileName, { type: type });
+                                selectedFiles.push(file);
+                                updateImagePreviews();
+                                
+                                showNotify("✅ Bild aus Zwischenablage eingefügt!", "success");
                                 if (statusEl) {
-                                    statusEl.textContent = `❌ Max ${maxImages} images reached`;
-                                    statusEl.style.color = '#f56565';
+                                    statusEl.textContent = '✅ Bild eingefügt!';
+                                    statusEl.style.color = '#48bb78';
                                     setTimeout(() => {
                                         statusEl.textContent = '';
-                                    }, 3000);
+                                    }, 2000);
                                 }
                                 return;
                             }
-                            
-                            const fileName = `clipboard_${Date.now()}.png`;
-                            const renamedFile = new File([file], fileName, { type: file.type });
-                            selectedFiles.push(renamedFile);
-                            updateImagePreviews();
-                            
-                            imageFound = true;
-                            showNotify("✅ Image pasted from clipboard!", "success");
-                            
-                            if (statusEl) {
-                                statusEl.textContent = '✅ Image pasted successfully!';
-                                statusEl.style.color = '#48bb78';
-                                setTimeout(() => {
-                                    statusEl.textContent = '';
-                                }, 3000);
-                            }
-                            break;
                         }
                     }
                 }
-                
-                if (!imageFound) {
-                    if (statusEl) {
-                        statusEl.textContent = '❌ No image found in clipboard. Take a screenshot first!';
-                        statusEl.style.color = '#f56565';
-                        setTimeout(() => {
-                            statusEl.textContent = '';
-                        }, 3000);
-                    }
-                }
-                
-            } catch (err) {
-                console.error("Clipboard error:", err);
+            }
+            
+            // Fallback: Wenn API nicht funktioniert
+            if (statusEl) {
+                statusEl.textContent = '⚠️ Bitte Ctrl+V drücken (Sicherheitseinschränkung)';
+                statusEl.style.color = '#ffd700';
+                setTimeout(() => {
+                    statusEl.textContent = '';
+                }, 3000);
+            }
+            showNotify("Drücke jetzt Ctrl+V um das Bild einzufügen", "info");
+            
+        } catch (err) {
+            console.error("Clipboard error:", err);
+            
+            if (err.name === 'NotAllowedError') {
                 if (statusEl) {
-                    statusEl.textContent = '❌ Error pasting image. Try right-click → Paste';
+                    statusEl.textContent = '🔒 Bitte erlaubnis erteilen und nochmal klicken';
                     statusEl.style.color = '#f56565';
-                    setTimeout(() => {
-                        statusEl.textContent = '';
-                    }, 3000);
+                }
+                showNotify("Browser erlaubt keinen Zugriff. Bitte Ctrl+V drücken.", "warning");
+            } else {
+                if (statusEl) {
+                    statusEl.textContent = '❌ Bildeinfügen fehlgeschlagen. Versuche Rechtsklick → Einfügen';
+                    statusEl.style.color = '#f56565';
                 }
             }
         }
+    }
+    
+    // Button Click = Direktes Einfügen
+    clipboardBtn.addEventListener('click', async () => {
+        await pasteFromClipboard();
     });
     
-    // Also listen for paste event globally but only when button was clicked recently
-    let clipboardMode = false;
-    
-    clipboardBtn.addEventListener('click', () => {
-        clipboardMode = true;
-        setTimeout(() => { clipboardMode = false; }, 5000);
+    // Zusätzlich: Wenn Ctrl+V gedrückt wird und Button fokussiert ist
+    clipboardBtn.addEventListener('keydown', async (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+            e.preventDefault();
+            await pasteFromClipboard();
+        }
     });
     
+    // Globales Paste Event als Fallback
     document.addEventListener('paste', (e) => {
-        if (!clipboardMode) return;
+        // Nur wenn Button vor kurzem geklickt wurde
+        const wasClicked = clipboardBtn === document.activeElement;
+        if (!wasClicked) return;
         
-        e.preventDefault();
         const items = e.clipboardData?.items;
-        
         for (let i = 0; i < items.length; i++) {
             if (items[i].type.indexOf('image') !== -1) {
+                e.preventDefault();
                 const file = items[i].getAsFile();
                 if (file) {
                     const maxImages = systemConfig.limits.maxImagesPerRequest;
@@ -1247,10 +1245,10 @@ function initClipboardButton() {
                         const renamedFile = new File([file], fileName, { type: file.type });
                         selectedFiles.push(renamedFile);
                         updateImagePreviews();
-                        showNotify("✅ Image pasted!", "success");
+                        showNotify("✅ Bild eingefügt!", "success");
                         
                         if (statusEl) {
-                            statusEl.textContent = '✅ Image pasted!';
+                            statusEl.textContent = '✅ Bild eingefügt!';
                             statusEl.style.color = '#48bb78';
                             setTimeout(() => { statusEl.textContent = ''; }, 2000);
                         }
@@ -1259,12 +1257,12 @@ function initClipboardButton() {
                 break;
             }
         }
-        
-        clipboardMode = false;
     });
+    
+    console.log("✅ Clipboard Button initialisiert");
 }
 
-// Call this AFTER everything else is loaded
+// Starte die Funktion
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initClipboardButton);
 } else {
