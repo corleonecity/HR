@@ -423,6 +423,50 @@ input[type="file"] {
     transition: color 0.2s;
 }
 
+/* ========== CLIPBOARD PASTE AREA ========== */
+.clipboard-area {
+    background: #0f0f0f;
+    border: 2px dashed #333;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.clipboard-area:hover {
+    border-color: #5865F2;
+    background: #141414;
+}
+
+.clipboard-area.drag-over {
+    border-color: #48bb78;
+    background: #1a2a1a;
+}
+
+.clipboard-icon {
+    font-size: 32px;
+    color: #5865F2;
+    margin-bottom: 10px;
+}
+
+.clipboard-area p {
+    color: #888;
+    font-size: 14px;
+    margin: 0;
+}
+
+.clipboard-area .key-hint {
+    font-family: monospace;
+    background: #1a1a1a;
+    padding: 4px 8px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 12px;
+}
+
 /* ========== IMAGE PREVIEW ========== */
 #imagePreviewContainer {
     display: flex;
@@ -863,5 +907,22 @@ input[type="file"] {
     
     .user-name-cell .username-handle {
         font-size: 9px;
+    }
+    
+    /* Clipboard area responsive */
+    .clipboard-area {
+        padding: 12px;
+    }
+    
+    .clipboard-icon {
+        font-size: 24px;
+    }
+    
+    .clipboard-area p {
+        font-size: 12px;
+    }
+    
+    .clipboard-area .key-hint {
+        font-size: 10px;
     }
 }
