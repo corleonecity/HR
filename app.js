@@ -1119,149 +1119,156 @@ function loadProfileHistory() {
 }
 
 // ==========================================
-// CLIPBOARD PASTE FUNCTIONALITY
+// CLIPBOARD BUTTON - ISOLATED VERSION
 // ==========================================
 
-async function pasteFromClipboard() {
-    const statusEl = document.getElementById('pasteStatus');
+function initClipboardButton() {
+    const clipboardBtn = document.getElementById('clipboardPasteBtn');
+    const statusEl = document.getElementById('clipboardStatus');
     
-    try {
-        // Check if clipboard API is available
-        if (!navigator.clipboard || !navigator.clipboard.read) {
-            if (statusEl) {
-                statusEl.textContent = '⚠️ Clipboard API not supported. Try: Right-click → Paste';
-                statusEl.className = 'paste-status error';
-            }
-            // Fallback: Try with event
-            showNotify("Press Ctrl+V while button is focused", "info");
-            return;
-        }
-        
-        // Request clipboard permission and read
-        const clipboardItems = await navigator.clipboard.read();
-        
-        for (const item of clipboardItems) {
-            const imageTypes = item.types.filter(type => type.startsWith('image/'));
-            
-            for (const type of imageTypes) {
-                const blob = await item.getType(type);
-                if (blob) {
-                    const maxImages = systemConfig.limits.maxImagesPerRequest;
-                    const availableSlots = maxImages - selectedFiles.length;
-                    
-                    if (availableSlots <= 0) {
-                        showNotify(`Maximum ${maxImages} images allowed!`, "warning");
-                        if (statusEl) {
-                            statusEl.textContent = `Max ${maxImages} images reached`;
-                            statusEl.className = 'paste-status error';
-                            setTimeout(() => {
-                                statusEl.textContent = 'Click button then Ctrl+V or right-click paste';
-                                statusEl.className = 'paste-status';
-                            }, 3000);
-                        }
-                        return;
-                    }
-                    
-                    const fileName = `clipboard_${Date.now()}.png`;
-                    const file = new File([blob], fileName, { type: type });
-                    selectedFiles.push(file);
-                    updateImagePreviews();
-                    
-                    if (statusEl) {
-                        statusEl.textContent = '✅ Image pasted successfully!';
-                        statusEl.className = 'paste-status success';
-                        setTimeout(() => {
-                            statusEl.textContent = 'Click button then Ctrl+V or right-click paste';
-                            statusEl.className = 'paste-status';
-                        }, 3000);
-                    }
-                    showNotify("📋 Image pasted from clipboard!", "success");
-                    return;
-                }
-            }
-        }
-        
+    if (!clipboardBtn) return;
+    
+    clipboardBtn.addEventListener('click', async () => {
         if (statusEl) {
-            statusEl.textContent = '❌ No image found in clipboard';
-            statusEl.className = 'paste-status error';
-            setTimeout(() => {
-                statusEl.textContent = 'Click button then Ctrl+V or right-click paste';
-                statusEl.className = 'paste-status';
-            }, 3000);
+            statusEl.textContent = '📋 Press Ctrl+V now to paste your image...';
+            statusEl.style.color = '#ffd700';
         }
         
-    } catch (err) {
-        console.error("Clipboard read error:", err);
+        // Focus the button so Ctrl+V works
+        clipboardBtn.focus();
         
-        if (err.name === 'NotAllowedError') {
-            if (statusEl) {
-                statusEl.textContent = '🔒 Permission denied. Press Ctrl+V after clicking the button!';
-                statusEl.className = 'paste-status error';
-            }
-            // Alternative: Focus button for Ctrl+V
-            const pasteBtn = document.getElementById('pasteFromClipboardBtn');
-            if (pasteBtn) {
-                pasteBtn.focus();
-                showNotify("Button focused! Now press Ctrl+V to paste", "info");
-            }
-        } else {
-            if (statusEl) {
-                statusEl.textContent = '❌ Error: Right-click and select "Paste" instead';
-                statusEl.className = 'paste-status error';
-            }
-        }
-    }
-}
-
-// Alternative: Listen for Ctrl+V when button is focused
-function setupPasteButton() {
-    const pasteBtn = document.getElementById('pasteFromClipboardBtn');
-    if (!pasteBtn) return;
-    
-    pasteBtn.addEventListener('click', async () => {
-        await pasteFromClipboard();
+        // Show notification
+        showNotify("✅ Button focused! Now press Ctrl+V to paste image", "info");
     });
     
-    // Also listen for Ctrl+V when button has focus
-    pasteBtn.addEventListener('keydown', async (e) => {
+    // Listen for Ctrl+V when button is focused
+    clipboardBtn.addEventListener('keydown', async (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
             e.preventDefault();
-            await pasteFromClipboard();
-        }
-    });
-    
-    // Right-click paste detection
-    document.addEventListener('paste', async (event) => {
-        // Check if paste button is focused or if we're not in an input
-        const activeElement = document.activeElement;
-        const isInInput = activeElement?.tagName === 'INPUT' || 
-                          activeElement?.tagName === 'TEXTAREA';
-        
-        if (!isInInput || activeElement?.id === 'pasteFromClipboardBtn') {
-            // Don't prevent default, just try to get image
-            const items = event.clipboardData?.items;
-            if (items) {
+            
+            if (statusEl) {
+                statusEl.textContent = '⏳ Reading clipboard...';
+                statusEl.style.color = '#ffd700';
+            }
+            
+            try {
+                const items = e.clipboardData?.items;
+                if (!items) {
+                    throw new Error('No clipboard data');
+                }
+                
+                let imageFound = false;
+                
                 for (let i = 0; i < items.length; i++) {
                     if (items[i].type.indexOf('image') !== -1) {
-                        event.preventDefault();
                         const file = items[i].getAsFile();
                         if (file) {
                             const maxImages = systemConfig.limits.maxImagesPerRequest;
                             const availableSlots = maxImages - selectedFiles.length;
-                            if (availableSlots > 0) {
-                                const fileName = `paste_${Date.now()}.png`;
-                                const renamedFile = new File([file], fileName, { type: file.type });
-                                selectedFiles.push(renamedFile);
-                                updateImagePreviews();
-                                showNotify("📋 Image pasted!", "success");
+                            
+                            if (availableSlots <= 0) {
+                                showNotify(`Maximum ${maxImages} images allowed!`, "warning");
+                                if (statusEl) {
+                                    statusEl.textContent = `❌ Max ${maxImages} images reached`;
+                                    statusEl.style.color = '#f56565';
+                                    setTimeout(() => {
+                                        statusEl.textContent = '';
+                                    }, 3000);
+                                }
+                                return;
                             }
+                            
+                            const fileName = `clipboard_${Date.now()}.png`;
+                            const renamedFile = new File([file], fileName, { type: file.type });
+                            selectedFiles.push(renamedFile);
+                            updateImagePreviews();
+                            
+                            imageFound = true;
+                            showNotify("✅ Image pasted from clipboard!", "success");
+                            
+                            if (statusEl) {
+                                statusEl.textContent = '✅ Image pasted successfully!';
+                                statusEl.style.color = '#48bb78';
+                                setTimeout(() => {
+                                    statusEl.textContent = '';
+                                }, 3000);
+                            }
+                            break;
                         }
-                        break;
                     }
+                }
+                
+                if (!imageFound) {
+                    if (statusEl) {
+                        statusEl.textContent = '❌ No image found in clipboard. Take a screenshot first!';
+                        statusEl.style.color = '#f56565';
+                        setTimeout(() => {
+                            statusEl.textContent = '';
+                        }, 3000);
+                    }
+                }
+                
+            } catch (err) {
+                console.error("Clipboard error:", err);
+                if (statusEl) {
+                    statusEl.textContent = '❌ Error pasting image. Try right-click → Paste';
+                    statusEl.style.color = '#f56565';
+                    setTimeout(() => {
+                        statusEl.textContent = '';
+                    }, 3000);
                 }
             }
         }
     });
+    
+    // Also listen for paste event globally but only when button was clicked recently
+    let clipboardMode = false;
+    
+    clipboardBtn.addEventListener('click', () => {
+        clipboardMode = true;
+        setTimeout(() => { clipboardMode = false; }, 5000);
+    });
+    
+    document.addEventListener('paste', (e) => {
+        if (!clipboardMode) return;
+        
+        e.preventDefault();
+        const items = e.clipboardData?.items;
+        
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                const file = items[i].getAsFile();
+                if (file) {
+                    const maxImages = systemConfig.limits.maxImagesPerRequest;
+                    const availableSlots = maxImages - selectedFiles.length;
+                    
+                    if (availableSlots > 0) {
+                        const fileName = `clipboard_${Date.now()}.png`;
+                        const renamedFile = new File([file], fileName, { type: file.type });
+                        selectedFiles.push(renamedFile);
+                        updateImagePreviews();
+                        showNotify("✅ Image pasted!", "success");
+                        
+                        if (statusEl) {
+                            statusEl.textContent = '✅ Image pasted!';
+                            statusEl.style.color = '#48bb78';
+                            setTimeout(() => { statusEl.textContent = ''; }, 2000);
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        
+        clipboardMode = false;
+    });
+}
+
+// Call this AFTER everything else is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initClipboardButton);
+} else {
+    initClipboardButton();
 }
 
 // ==========================================
