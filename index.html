@@ -119,10 +119,11 @@
                     <input type="number" id="gpAmount" placeholder="Amount (e.g. 5000)" min="100">
                     
                     <!-- Clipboard Paste Area -->
-                    <div id="clipboardArea" class="clipboard-area" tabindex="0">
-                        <i class="fas fa-paste clipboard-icon"></i>
-                        <p><strong>Ctrl+V</strong> to paste images</p>
-                        <span class="key-hint">or drag & drop</span>
+                    <div class="paste-area">
+                        <button id="pasteFromClipboardBtn" class="paste-btn">
+                            <i class="fas fa-paste"></i> Paste Image from Clipboard
+                        </button>
+                        <span id="pasteStatus" class="paste-status">Click button then Ctrl+V or right-click paste</span>
                     </div>
                     
                     <div class="file-upload-wrapper">
