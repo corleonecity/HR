@@ -426,13 +426,17 @@ input[type="file"] {
 /* ========== CLIPBOARD PASTE AREA ========== */
 .clipboard-area {
     background: #0f0f0f;
-    border: 2px dashed #333;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+    border: 1px dashed #444;
+    border-radius: 10px;
+    padding: 10px 15px;
+    margin-bottom: 15px;
     text-align: center;
     transition: all 0.2s;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
 .clipboard-area:hover {
@@ -446,25 +450,23 @@ input[type="file"] {
 }
 
 .clipboard-icon {
-    font-size: 32px;
+    font-size: 18px;
     color: #5865F2;
-    margin-bottom: 10px;
 }
 
 .clipboard-area p {
     color: #888;
-    font-size: 14px;
+    font-size: 13px;
     margin: 0;
 }
 
 .clipboard-area .key-hint {
     font-family: monospace;
     background: #1a1a1a;
-    padding: 4px 8px;
-    border-radius: 6px;
-    display: inline-block;
-    margin-top: 8px;
-    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #aaa;
 }
 
 /* ========== IMAGE PREVIEW ========== */
