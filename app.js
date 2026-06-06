@@ -1123,29 +1123,46 @@ function loadProfileHistory() {
 // ==========================================
 
 async function handleImagePaste(event) {
-    if (isProcessingClipboard) return;
+    console.log("Paste event detected!", event);
+    
+    if (isProcessingClipboard) {
+        console.log("Already processing clipboard, skipping");
+        return;
+    }
     
     const items = event.clipboardData?.items;
-    if (!items) return;
+    if (!items) {
+        console.log("No clipboard items found");
+        return;
+    }
+    
+    console.log("Clipboard items:", items.length);
     
     const imageFiles = [];
     
     for (let i = 0; i < items.length; i++) {
         const item = items[i];
+        console.log("Item type:", item.type);
         
+        // Check if it's an image
         if (item.type.indexOf('image') !== -1) {
             const file = item.getAsFile();
             if (file) {
+                console.log("Found image file:", file.name, file.type, file.size);
                 const timestamp = Date.now();
                 const randomId = Math.random().toString(36).substring(2, 8);
-                const fileName = `pasted_image_${timestamp}_${randomId}.png`;
+                const fileName = `clipboard_${timestamp}_${randomId}.png`;
                 const renamedFile = new File([file], fileName, { type: file.type });
                 imageFiles.push(renamedFile);
             }
         }
     }
     
+    console.log("Image files found:", imageFiles.length);
+    
     if (imageFiles.length > 0) {
+        event.preventDefault(); // Wichtig! Verhindert dass Text eingefügt wird
+        
         isProcessingClipboard = true;
         
         const maxImages = systemConfig.limits.maxImagesPerRequest;
@@ -1161,16 +1178,11 @@ async function handleImagePaste(event) {
         selectedFiles = selectedFiles.concat(filesToAdd);
         updateImagePreviews();
         
-        const addedCount = filesToAdd.length;
-        const skippedCount = imageFiles.length - addedCount;
-        
-        let message = `📋 ${addedCount} image(s) pasted from clipboard!`;
-        if (skippedCount > 0) {
-            message += ` (${skippedCount} skipped - max ${maxImages})`;
-        }
-        showNotify(message, "success");
+        showNotify(`📋 ${filesToAdd.length} image(s) pasted from clipboard!`, "success");
         
         isProcessingClipboard = false;
+    } else {
+        console.log("No images found in clipboard");
     }
 }
 
@@ -1178,73 +1190,70 @@ function setupClipboardHandlers() {
     const clipboardArea = document.getElementById('clipboardArea');
     const gpAmountInput = document.getElementById('gpAmount');
     
-    if (!clipboardArea) return;
-    
+    // GLOBAL paste event für die ganze Seite
     document.addEventListener('paste', (event) => {
         const activeElement = document.activeElement;
         const isTypingInAmount = activeElement === gpAmountInput;
+        const isTypingInComment = activeElement?.tagName === 'TEXTAREA' || 
+                                   activeElement?.tagName === 'INPUT';
         
-        if (isTypingInAmount) {
+        // Wenn in einem Textfeld getippt wird, nicht einfügen
+        if (isTypingInAmount || isTypingInComment) {
+            console.log("Typing in input, skipping image paste");
             return;
         }
         
+        console.log("Global paste - handling image");
         handleImagePaste(event);
     });
     
-    clipboardArea.addEventListener('click', () => {
-        clipboardArea.focus();
-        showNotify("📋 Clipboard area focused! Press Ctrl+V to paste images.", "info");
-    });
-    
-    clipboardArea.addEventListener('focus', () => {
-        clipboardArea.style.borderColor = '#5865F2';
-        clipboardArea.style.background = '#141414';
-    });
-    
-    clipboardArea.addEventListener('blur', () => {
-        clipboardArea.style.borderColor = '#333';
-        clipboardArea.style.background = '#0f0f0f';
-    });
-    
-    clipboardArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        clipboardArea.classList.add('drag-over');
-    });
-    
-    clipboardArea.addEventListener('dragleave', () => {
-        clipboardArea.classList.remove('drag-over');
-    });
-    
-    clipboardArea.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        clipboardArea.classList.remove('drag-over');
+    if (clipboardArea) {
+        clipboardArea.addEventListener('click', () => {
+            showNotify("📋 Press Ctrl+V to paste images from clipboard", "info");
+        });
         
-        const files = [];
-        const items = e.dataTransfer.items;
+        clipboardArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            clipboardArea.classList.add('drag-over');
+        });
         
-        for (let i = 0; i < items.length; i++) {
-            const item = items[i];
-            if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
-                const file = item.getAsFile();
-                files.push(file);
-            }
-        }
+        clipboardArea.addEventListener('dragleave', () => {
+            clipboardArea.classList.remove('drag-over');
+        });
         
-        if (files.length > 0) {
-            const maxImages = systemConfig.limits.maxImagesPerRequest;
-            const availableSlots = maxImages - selectedFiles.length;
+        clipboardArea.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            clipboardArea.classList.remove('drag-over');
             
-            if (availableSlots <= 0) {
-                showNotify(`Maximum ${maxImages} images allowed!`, "warning");
-                return;
+            const files = [];
+            const items = e.dataTransfer.items;
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file' && item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    files.push(file);
+                }
             }
             
-            const filesToAdd = files.slice(0, availableSlots);
-            selectedFiles = selectedFiles.concat(filesToAdd);
-            updateImagePreviews();
-            showNotify(`${filesToAdd.length} image(s) dropped!`, "success");
-        }
-    });
+            if (files.length > 0) {
+                const maxImages = systemConfig.limits.maxImagesPerRequest;
+                const availableSlots = maxImages - selectedFiles.length;
+                
+                if (availableSlots <= 0) {
+                    showNotify(`Maximum ${maxImages} images allowed!`, "warning");
+                    return;
+                }
+                
+                const filesToAdd = files.slice(0, availableSlots);
+                selectedFiles = selectedFiles.concat(filesToAdd);
+                updateImagePreviews();
+                showNotify(`${filesToAdd.length} image(s) dropped!`, "success");
+            }
+        });
+    }
+    
+    console.log("Clipboard handlers initialized");
 }
 
 // ==========================================
