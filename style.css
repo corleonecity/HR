@@ -423,50 +423,44 @@ input[type="file"] {
     transition: color 0.2s;
 }
 
-/* ========== CLIPBOARD PASTE AREA ========== */
-.paste-area {
+/* ========== PASTE AREA (NEU) ========== */
+#pasteArea {
     background: #0f0f0f;
-    border: 1px solid #333;
+    border: 1px dashed #5865F2;
     border-radius: 12px;
-    padding: 12px 20px;
+    padding: 15px;
     margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.paste-btn {
-    background: #5865F2;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 10px;
-    font-weight: 600;
+    text-align: center;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: 0.2s;
+    transition: all 0.2s ease;
 }
 
-.paste-btn:hover {
-    background: #4752c4;
-    transform: translateY(-1px);
+#pasteArea:hover {
+    background: #141414;
+    border-color: #48bb78;
 }
 
-.paste-status {
+#pasteArea:focus {
+    background: #1a1a1a;
+    border-color: #48bb78;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.2);
+}
+
+#pasteArea i {
+    color: #5865F2;
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+#pasteArea strong {
+    color: #fff;
+}
+
+#pasteStatus {
     color: #888;
-    font-size: 13px;
-}
-
-.paste-status.success {
-    color: #48bb78;
-}
-
-.paste-status.error {
-    color: #f56565;
+    font-size: 12px;
+    margin-top: 8px;
 }
 
 /* ========== IMAGE PREVIEW ========== */
