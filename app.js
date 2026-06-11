@@ -6,11 +6,11 @@ const urlParams = new URLSearchParams(window.location.search);
 const isReviewMode = urlParams.get('review') === 'true';
 
 if (isReviewMode) {
-    console.log("🔍 REVIEW MODE AKTIVIERT – Demo-Ansicht für Roblox OAuth");
+    console.log("🔍 REVIEW MODUS AKTIVIERT – Überspringe komplette Login-Logik");
     
     // Warte bis DOM geladen ist
     document.addEventListener('DOMContentLoaded', () => {
-        // Login-Container ausblenden, Demo anzeigen
+        // Alle Login/Seiten Container ausblenden
         const loginPage = document.getElementById('loginPage');
         const noPermissionPage = document.getElementById('noPermissionPage');
         const robloxPage = document.getElementById('robloxPage');
@@ -21,69 +21,66 @@ if (isReviewMode) {
         if (robloxPage) robloxPage.classList.add('hidden');
         if (mainContent) mainContent.classList.remove('hidden');
         
-        // Demo-Benutzer erstellen
-        currentUser = {
-            id: 'review_demo_user',
-            username: 'reviewer',
-            global_name: 'OAuth Review Demo',
+        // Demo-Benutzer erstellen (damit die App "denkt" es gibt einen User)
+        window.currentUser = {
+            id: 'review_demo_user_123',
+            username: 'reviewer_demo',
+            global_name: 'OAuth Reviewer',
             avatar: null
         };
         
-        // Demo-Daten anzeigen
-        const userWelcome = document.getElementById('userWelcome');
-        const userAvatar = document.getElementById('userAvatar');
-        if (userWelcome) userWelcome.textContent = 'Hi, OAuth Reviewer';
-        if (userAvatar) userAvatar.src = 'https://cdn.discordapp.com/embed/avatars/0.png';
-        
         // Demo-Daten für Leaderboard
-        allUsersData = {
-            demo1: { discordName: 'DemoUser1', discordUsername: 'demo1', robloxName: 'RobloxPlayer1', robloxUsername: 'roblox1', totalGP: 12500 },
-            demo2: { discordName: 'DemoUser2', discordUsername: 'demo2', robloxName: 'RobloxPlayer2', robloxUsername: 'roblox2', totalGP: 8700 },
-            demo3: { discordName: 'DemoUser3', discordUsername: 'demo3', robloxName: 'RobloxPlayer3', robloxUsername: 'roblox3', totalGP: 5300 }
+        window.allUsersData = {
+            demo1: { discordName: 'Sarah Williams', discordUsername: 'sarahw', robloxName: 'SarahGamer', robloxUsername: 'sarahgamer_99', totalGP: 12500 },
+            demo2: { discordName: 'Mike Johnson', discordUsername: 'mikej', robloxName: 'MikePro', robloxUsername: 'mikepro_2024', totalGP: 8700 },
+            demo3: { discordName: 'Emma Davis', discordUsername: 'emmad', robloxName: 'EmmaBuilder', robloxUsername: 'emma_builds', totalGP: 5300 },
+            demo4: { discordName: 'Alex Chen', discordUsername: 'alexc', robloxName: 'AlexSpeed', robloxUsername: 'alex_speed', totalGP: 4200 },
+            demo5: { discordName: 'Jessica Lee', discordUsername: 'jessl', robloxName: 'JessArt', robloxUsername: 'jess_creative', totalGP: 3100 }
         };
         
-        renderLeaderboard('');
+        // Leaderboard rendern
+        const leaderboardBody = document.getElementById('leaderboardBody');
+        if (leaderboardBody) {
+            leaderboardBody.innerHTML = `
+                <tr><td><strong>🥇</strong></td><td><div class="user-name-cell"><span class="display-name">Sarah Williams</span><span class="username-handle">@sarahw</span></div></td><td><div class="user-name-cell"><span class="display-name">SarahGamer</span><span class="username-handle">@sarahgamer_99</span></div></td><td style="color:#48bb78; font-weight:bold;">12,500 GP</td></tr>
+                <tr><td><strong>🥈</strong></td><td><div class="user-name-cell"><span class="display-name">Mike Johnson</span><span class="username-handle">@mikej</span></div></td><td><div class="user-name-cell"><span class="display-name">MikePro</span><span class="username-handle">@mikepro_2024</span></div></td><td style="color:#48bb78; font-weight:bold;">8,700 GP</td></tr>
+                <tr><td><strong>🥉</strong></td><td><div class="user-name-cell"><span class="display-name">Emma Davis</span><span class="username-handle">@emmad</span></div></td><td><div class="user-name-cell"><span class="display-name">EmmaBuilder</span><span class="username-handle">@emma_builds</span></div></td><td style="color:#48bb78; font-weight:bold;">5,300 GP</td></tr>
+                <tr><td><strong>4</strong></td><td><div class="user-name-cell"><span class="display-name">Alex Chen</span><span class="username-handle">@alexc</span></div></td><td><div class="user-name-cell"><span class="display-name">AlexSpeed</span><span class="username-handle">@alex_speed</span></div></td><td style="color:#48bb78; font-weight:bold;">4,200 GP</td></tr>
+                <tr><td><strong>5</strong></td><td><div class="user-name-cell"><span class="display-name">Jessica Lee</span><span class="username-handle">@jessl</span></div></td><td><div class="user-name-cell"><span class="display-name">JessArt</span><span class="username-handle">@jess_creative</span></div></td><td style="color:#48bb78; font-weight:bold;">3,100 GP</td></tr>
+            `;
+        }
         
-        // Demo-Historie für Profil
+        // Total GP Stat
+        const totalGpStat = document.getElementById('totalGpStat');
+        if (totalGpStat) totalGpStat.textContent = '33,800';
+        
+        // Demo Profil-Historie
         const profileBody = document.getElementById('profileHistoryBody');
         if (profileBody) {
             profileBody.innerHTML = `
-                <tr><td>01.01.2025</td><td style="color:#48bb78;">+500 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td>Demo Admin</td></tr>
-                <tr><td>15.12.2024</td><td style="color:#48bb78;">+1200 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td>Demo Admin</td></tr>
-                <tr><td>01.12.2024</td><td style="color:#f56565;">+300 GP</td><td><span class="status-badge status-rejected">Rejected ❌</span></td><td>Missing proof</td></tr>
+                <tr><td style="font-size:14px;">01/15/2025, 14:30</td><td style="font-weight:bold; color:#48bb78;">+2,500 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td style="font-size:12px;">Valid proof provided</td></tr>
+                <tr><td style="font-size:14px;">12/20/2024, 09:15</td><td style="font-weight:bold; color:#48bb78;">+1,200 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td style="font-size:12px;">Verified by Admin</td></tr>
+                <tr><td style="font-size:14px;">12/01/2024, 22:45</td><td style="font-weight:bold; color:#f56565;">+300 GP</td><td><span class="status-badge status-rejected">Rejected ❌</span></td><td style="font-size:12px;">Missing screenshot proof</td></tr>
             `;
         }
         
-        // Demo Total GP
-        const totalGpStat = document.getElementById('totalGpStat');
-        if (totalGpStat) totalGpStat.textContent = '26500';
-        
-        // Demo Pending Requests (Admin Panel Demo)
+        // Demo Pending Requests (Admin Tab)
         const adminBody = document.getElementById('adminPendingBody');
         if (adminBody) {
             adminBody.innerHTML = `
-                <tr>
-                    <td><div class="user-name-cell"><span class="display-name">DemoUser</span><span class="username-handle">@demouser</span></div></td>
-                    <td><div class="user-name-cell"><span class="display-name">RobloxPlayer</span><span class="username-handle">@robloxplayer</span></div></td>
-                    <td style="color:#cd7f32; font-weight:bold;">+2500 GP</td>
-                    <td><div style="display:flex; gap:5px;"><button class="btn-small btn-approve" disabled>✅ Approve</button><button class="btn-small btn-deny" disabled>❌ Reject</button></div></td>
-                </tr>
-                <tr>
-                    <td><div class="user-name-cell"><span class="display-name">TestUser</span><span class="username-handle">@testuser</span></div></td>
-                    <td><div class="user-name-cell"><span class="display-name">RobloxTester</span><span class="username-handle">@robloxtester</span></div></td>
-                    <td style="color:#cd7f32; font-weight:bold;">+1000 GP</td>
-                    <td><div style="display:flex; gap:5px;"><button class="btn-small btn-approve" disabled>✅ Approve</button><button class="btn-small btn-deny" disabled>❌ Reject</button></div></td>
-                </tr>
+                <tr><td><div class="user-name-cell"><span class="display-name">TestUser1</span><span class="username-handle">@testuser1</span></div></td><td><div class="user-name-cell"><span class="display-name">RobloxPlayer1</span><span class="username-handle">@robloxplayer1</span></div></td><td style="color:#cd7f32; font-weight:bold;">+2,500 GP</td><td><div style="display:flex; gap:5px;"><button class="btn-small btn-approve" disabled style="opacity:0.6;">✅ Approve</button><button class="btn-small btn-deny" disabled style="opacity:0.6;">❌ Reject</button></div></td></tr>
+                <tr><td><div class="user-name-cell"><span class="display-name">TestUser2</span><span class="username-handle">@testuser2</span></div></td><td><div class="user-name-cell"><span class="display-name">RobloxPlayer2</span><span class="username-handle">@robloxplayer2</span></div></td><td style="color:#cd7f32; font-weight:bold;">+1,000 GP</td><td><div style="display:flex; gap:5px;"><button class="btn-small btn-approve" disabled style="opacity:0.6;">✅ Approve</button><button class="btn-small btn-deny" disabled style="opacity:0.6;">❌ Reject</button></div></td></tr>
+                <tr><td><div class="user-name-cell"><span class="display-name">TestUser3</span><span class="username-handle">@testuser3</span></div></td><td><div class="user-name-cell"><span class="display-name">RobloxPlayer3</span><span class="username-handle">@robloxplayer3</span></div></td><td style="color:#cd7f32; font-weight:bold;">+5,000 GP</td><td><div style="display:flex; gap:5px;"><button class="btn-small btn-approve" disabled style="opacity:0.6;">✅ Approve</button><button class="btn-small btn-deny" disabled style="opacity:0.6;">❌ Reject</button></div></td></tr>
             `;
         }
         
-        // Demo Admin & Owner Tabs anzeigen (für vollständigen Review)
+        // Admin & Owner Tabs anzeigen
         const tabBtnAdmin = document.getElementById('tabBtnAdmin');
         const tabBtnOwner = document.getElementById('tabBtnOwner');
         if (tabBtnAdmin) tabBtnAdmin.style.display = 'flex';
         if (tabBtnOwner) tabBtnOwner.style.display = 'flex';
         
-        // Demo Rollenliste
+        // Demo Rollenliste (Owner Tab)
         const adminRolesContainer = document.getElementById('adminRolesList');
         if (adminRolesContainer) {
             adminRolesContainer.innerHTML = `
@@ -98,9 +95,10 @@ if (isReviewMode) {
         const channelConfigContainer = document.getElementById('channelConfigList');
         if (channelConfigContainer) {
             channelConfigContainer.innerHTML = `
-                <div class="channel-config-item"><div class="channel-config-name">📤 Leave Logs Channel</div><div class="channel-config-description">Channel for user leave notifications</div><div class="channel-config-input"><input type="text" value="123456789" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
-                <div class="channel-config-item"><div class="channel-config-name">💎 GP Requests Channel</div><div class="channel-config-description">Channel for new GP donation requests</div><div class="channel-config-input"><input type="text" value="123456789" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
-                <div class="channel-config-item"><div class="channel-config-name">✅ GP Processed Channel</div><div class="channel-config-description">Channel for approved/rejected GP requests</div><div class="channel-config-input"><input type="text" value="123456789" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
+                <div class="channel-config-item"><div class="channel-config-name">📤 Leave Logs Channel</div><div class="channel-config-description">Channel for user leave notifications</div><div class="channel-config-input"><input type="text" value="123456789012345678" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
+                <div class="channel-config-item"><div class="channel-config-name">💎 GP Requests Channel</div><div class="channel-config-description">Channel for new GP donation requests</div><div class="channel-config-input"><input type="text" value="123456789012345678" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
+                <div class="channel-config-item"><div class="channel-config-name">✅ GP Processed Channel</div><div class="channel-config-description">Channel for approved/rejected GP requests</div><div class="channel-config-input"><input type="text" value="123456789012345678" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
+                <div class="channel-config-item"><div class="channel-config-name">🔐 Login Logs Channel</div><div class="channel-config-description">Channel for user login notifications</div><div class="channel-config-input"><input type="text" value="123456789012345678" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
             `;
         }
         
@@ -108,7 +106,8 @@ if (isReviewMode) {
         const kickLogsBody = document.getElementById('kickLogsBody');
         if (kickLogsBody) {
             kickLogsBody.innerHTML = `
-                <tr><td>01.01.2025 12:00</td><td><code>123456789</code><br>DemoUser</td><td><code>987654321</code><br>AdminUser</td><td>Rule violation</td><td>✅ Yes</td></tr>
+                <tr><td style="font-size:12px;">01/10/2025, 15:30</td><td><code>123456789</code><br>BadUser</td><td><code>987654321</code><br>AdminUser</td><td>Spam / Rule violation</td><td>✅ Yes</td></tr>
+                <tr><td style="font-size:12px;">12/25/2024, 08:45</td><td><code>111222333</code><br>ToxicPlayer</td><td><code>987654321</code><br>AdminUser</td><td>Harassment</td><td>✅ Yes</td></tr>
             `;
         }
         
@@ -116,7 +115,8 @@ if (isReviewMode) {
         const savedMessagesContainer = document.getElementById('savedMessagesList');
         if (savedMessagesContainer) {
             savedMessagesContainer.innerHTML = `
-                <div class="saved-message-item"><div class="message-name">📝 Welcome Message (Demo)</div><div class="message-channel">📡 Channel ID: 123456789</div><div class="message-preview"><strong>Message:</strong> Welcome to the server! Please read the rules.</div><div class="message-actions"><button class="btn-edit-message" disabled>✏️ Edit</button><button class="btn-send-message" disabled>📤 Send / Update</button><button class="btn-delete-message" disabled>🗑️ Delete</button></div></div>
+                <div class="saved-message-item"><div class="message-name">📝 Welcome Message (Demo)</div><div class="message-channel">📡 Channel ID: 123456789012345678</div><div class="message-preview"><strong>Message:</strong> Welcome to the server! Please read the rules and enjoy your stay.</div><div class="message-actions"><button class="btn-edit-message" disabled>✏️ Edit</button><button class="btn-send-message" disabled>📤 Send</button><button class="btn-delete-message" disabled>🗑️ Delete</button></div></div>
+                <div class="saved-message-item"><div class="message-name">📢 Announcement Template (Demo)</div><div class="message-channel">📡 Channel ID: 123456789012345678</div><div class="message-preview"><strong>Message:</strong> 📢 New event coming soon! Stay tuned for more information.</div><div class="message-actions"><button class="btn-edit-message" disabled>✏️ Edit</button><button class="btn-send-message" disabled>📤 Send</button><button class="btn-delete-message" disabled>🗑️ Delete</button></div></div>
             `;
         }
         
@@ -143,45 +143,62 @@ if (isReviewMode) {
         
         // Demo Stat Total Users
         const statTotalUsers = document.getElementById('statTotalUsers');
-        if (statTotalUsers) statTotalUsers.textContent = '42';
+        if (statTotalUsers) statTotalUsers.textContent = '47';
         
-        // Demo GP Submit Card anzeigen (aber Buttons disabled)
+        // GP Submit Card sichtbar machen (aber Inputs disabled)
         const gpSubmitCard = document.getElementById('gpSubmitCard');
         if (gpSubmitCard) gpSubmitCard.classList.remove('hidden');
+        const gpAmount = document.getElementById('gpAmount');
+        if (gpAmount) {
+            gpAmount.disabled = true;
+            gpAmount.placeholder = 'Review Mode: Input disabled';
+        }
         const addGPBtn = document.getElementById('addGPBtn');
         if (addGPBtn) {
             addGPBtn.disabled = true;
+            addGPBtn.style.opacity = '0.6';
             addGPBtn.title = 'Deaktiviert im Review-Modus';
         }
-        const gpAmount = document.getElementById('gpAmount');
-        if (gpAmount) gpAmount.disabled = true;
         const proofImage = document.getElementById('proofImage');
         if (proofImage) proofImage.disabled = true;
+        const customFileBtn = document.querySelector('.custom-file-btn');
+        if (customFileBtn) customFileBtn.style.opacity = '0.6';
         
-        // Review Mode Hinweis anzeigen (als Notification)
-        showNotify("🔍 REVIEW MODE – Demo-Ansicht für Roblox OAuth, keine echten Änderungen möglich", "warning");
+        // PasteArea deaktivieren
+        const pasteArea = document.getElementById('pasteArea');
+        if (pasteArea) {
+            pasteArea.style.opacity = '0.6';
+            pasteArea.style.cursor = 'not-allowed';
+            const pasteStatus = document.getElementById('pasteStatus');
+            if (pasteStatus) pasteStatus.textContent = '🔍 Review Mode: Eingabe deaktiviert';
+        }
         
-        // Alle Buttons die Schreiboperationen machen deaktivieren
-        const allButtons = document.querySelectorAll('button');
-        allButtons.forEach(btn => {
-            if (btn.id !== 'discordLoginBtn' && btn.id !== 'robloxLoginBtn') {
-                // Nur Login-Buttons lassen wir aktiv (die werden aber ausgeblendet)
-                btn.disabled = true;
-                btn.style.opacity = '0.6';
-                btn.style.cursor = 'not-allowed';
-            }
-        });
+        // User Welcome und Avatar setzen
+        const userWelcome = document.getElementById('userWelcome');
+        const userAvatar = document.getElementById('userAvatar');
+        if (userWelcome) userWelcome.textContent = 'Hi, OAuth Reviewer';
+        if (userAvatar) userAvatar.src = 'https://cdn.discordapp.com/embed/avatars/0.png';
         
-        // Tabs funktionsfähig lassen (nur zur Ansicht)
-        const tabBtns = document.querySelectorAll('.nav-tab');
-        tabBtns.forEach(btn => {
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            btn.style.cursor = 'pointer';
-        });
+        // Review Mode Hinweis anzeigen
+        const notification = document.getElementById('notification');
+        if (notification) {
+            notification.textContent = '🔍 REVIEW MODE – Demo-Ansicht für Roblox OAuth, keine Login nötig';
+            notification.className = 'notification show bg-warning';
+            setTimeout(() => notification.classList.remove('show'), 5000);
+        }
         
-        console.log("✅ Review Mode vollständig initialisiert – Seite ist für Roblox OAuth Review bereit");
+        // Logout Buttons ausblenden (nicht relevant im Review Mode)
+        const rbxLogoutBtn = document.getElementById('rbxLogoutBtn');
+        const dcLogoutBtn = document.getElementById('dcLogoutBtn');
+        if (rbxLogoutBtn) rbxLogoutBtn.style.display = 'none';
+        if (dcLogoutBtn) dcLogoutBtn.style.display = 'none';
+        
+        console.log("✅ Review Mode vollständig initialisiert – KEIN Login erforderlich");
     });
+    
+    // WICHTIG: Verhindere dass der Rest der App ausgeführt wird
+    // Wir überspringen die gesamte normale App-Initialisierung
+    throw new Error("Review Mode aktiv – normale App wird nicht gestartet");
 }
 
 // ==========================================
