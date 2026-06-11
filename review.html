@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox OAuth Review - Colin Verify System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #050505;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        /* Review Banner */
+        .review-banner {
+            background: linear-gradient(135deg, #1a5c3e, #0d3b26);
+            border-radius: 16px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 1px solid #48bb78;
+        }
+        .review-banner h1 {
+            font-size: 20px;
+            color: #48bb78;
+        }
+        .review-banner p {
+            color: #aaa;
+            font-size: 14px;
+        }
+        .review-badge {
+            background: #48bb78;
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        /* Cards */
+        .system-card {
+            background: #0a0a0a;
+            border: 1px solid #1f1f1f;
+            border-radius: 20px;
+            padding: 35px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ffd700;
+        }
+        h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+        /* Table */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th {
+            text-align: left;
+            padding: 15px;
+            color: #888;
+            border-bottom: 1px solid #1f1f1f;
+        }
+        .table td {
+            padding: 15px;
+            border-bottom: 1px solid #111;
+        }
+        .user-name-cell {
+            display: flex;
+            flex-direction: column;
+        }
+        .display-name {
+            font-weight: 600;
+            color: #fff;
+        }
+        .username-handle {
+            font-size: 12px;
+            color: #777;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .status-approved {
+            background: rgba(72, 187, 120, 0.2);
+            color: #48bb78;
+        }
+        .status-pending {
+            background: rgba(205, 127, 50, 0.2);
+            color: #cd7f32;
+        }
+        .status-rejected {
+            background: rgba(245, 101, 101, 0.2);
+            color: #f56565;
+        }
+        .btn-small {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            background: #333;
+            color: #888;
+        }
+        .info-box {
+            background: #0f0f0f;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .info-box .big-number {
+            font-size: 48px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #555;
+            font-size: 12px;
+            border-top: 1px solid #1f1f1f;
+            margin-top: 40px;
+        }
+        hr {
+            border-color: #1f1f1f;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Review Banner – WICHTIG für Roblox -->
+        <div class="review-banner">
+            <div>
+                <h1><i class="fas fa-check-circle"></i> Roblox OAuth Review Mode</h1>
+                <p>This is a public demo page for Roblox OAuth verification. No login required.</p>
+            </div>
+            <div class="review-badge">
+                <i class="fas fa-flask"></i> REVIEW MODE
+            </div>
+        </div>
+
+        <!-- ========== LEADERBOARD DEMO ========== -->
+        <div class="system-card">
+            <h2><i class="fas fa-trophy"></i> 🏆 GP Leaderboard (Demo)</h2>
+            <p style="color:#888; margin-bottom: 20px;">Shows verified GP donations from registered users.</p>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Rank</th><th>Discord User</th><th>Roblox User</th><th>Total GP</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>🥇</strong></td><td><div class="user-name-cell"><span class="display-name">Sarah Williams</span><span class="username-handle">@sarahw</span></div></td><td><div class="user-name-cell"><span class="display-name">SarahGamer</span><span class="username-handle">@sarahgamer</span></div></td><td style="color:#48bb78;">12,500 GP</td></tr>
+                    <tr><td><strong>🥈</strong></td><td><div class="user-name-cell"><span class="display-name">Mike Johnson</span><span class="username-handle">@mikej</span></div></td><td><div class="user-name-cell"><span class="display-name">MikePro</span><span class="username-handle">@mikepro</span></div></td><td style="color:#48bb78;">8,700 GP</td></tr>
+                    <tr><td><strong>🥉</strong></td><td><div class="user-name-cell"><span class="display-name">Emma Davis</span><span class="username-handle">@emmad</span></div></td><td><div class="user-name-cell"><span class="display-name">EmmaBuilder</span><span class="username-handle">@emmabuilds</span></div></td><td style="color:#48bb78;">5,300 GP</td></tr>
+                    <tr><td>4</td><td><div class="user-name-cell"><span class="display-name">Alex Chen</span><span class="username-handle">@alexc</span></div></td><td><div class="user-name-cell"><span class="display-name">AlexSpeed</span><span class="username-handle">@alexspeed</span></div></td><td style="color:#48bb78;">4,200 GP</td></tr>
+                    <tr><td>5</td><td><div class="user-name-cell"><span class="display-name">Jessica Lee</span><span class="username-handle">@jessl</span></div></td><td><div class="user-name-cell"><span class="display-name">JessArt</span><span class="username-handle">@jessart</span></div></td><td style="color:#48bb78;">3,100 GP</td></tr>
+                </tbody>
+            </table>
+            
+            <div class="info-box">
+                <div class="big-number">33,800</div>
+                <div>Total GP in System</div>
+            </div>
+        </div>
+
+        <!-- ========== PROFILE HISTORY DEMO ========== -->
+        <div class="system-card">
+            <h2><i class="fas fa-history"></i> 👤 User Request History (Demo)</h2>
+            <p style="color:#888; margin-bottom: 20px;">Example of a user's GP donation history.</p>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Date</th><th>Amount</th><th>Status</th><th>Admin Comment</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>01/15/2025</td><td style="color:#48bb78;">+2,500 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td>Valid proof provided</td></tr>
+                    <tr><td>12/20/2024</td><td style="color:#48bb78;">+1,200 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td>Verified by Admin</td></tr>
+                    <tr><td>12/01/2024</td><td style="color:#f56565;">+300 GP</td><td><span class="status-badge status-rejected">Rejected ❌</span></td><td>Missing screenshot proof</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ========== PENDING REQUESTS DEMO (ADMIN VIEW) ========== -->
+        <div class="system-card">
+            <h2><i class="fas fa-clock"></i> ⏳ Pending GP Requests (Admin Demo)</h2>
+            <p style="color:#888; margin-bottom: 20px;">Admin panel showing requests awaiting review.</p>
+            
+            <table class="table">
+                <thead>
+                    <tr><th>Discord User</th><th>Roblox User</th><th>Amount</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><div class="user-name-cell"><span class="display-name">TestUser1</span><span class="username-handle">@testuser1</span></div></td><td><div class="user-name-cell"><span class="display-name">RobloxPlayer1</span><span class="username-handle">@robloxplayer1</span></div></td><td style="color:#cd7f32;">+2,500 GP</td><td><button class="btn-small" disabled>✅ Approve</button> <button class="btn-small" disabled>❌ Reject</button></td></tr>
+                    <tr><td><div class="user-name-cell"><span class="display-name">TestUser2</span><span class="username-handle">@testuser2</span></div></td><td><div class="user-name-cell"><span class="display-name">RobloxPlayer2</span><span class="username-handle">@robloxplayer2</span></div></td><td style="color:#cd7f32;">+1,000 GP</td><td><button class="btn-small" disabled>✅ Approve</button> <button class="btn-small" disabled>❌ Reject</button></td></tr>
+                    <tr><td><div class="user-name-cell"><span class="display-name">TestUser3</span><span class="username-handle">@testuser3</span></div></td><td><div class="user-name-cell"><span class="display-name">RobloxPlayer3</span><span class="username-handle">@robloxplayer3</span></div></td><td style="color:#cd7f32;">+5,000 GP</td><td><button class="btn-small" disabled>✅ Approve</button> <button class="btn-small" disabled>❌ Reject</button></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ========== SYSTEM CONFIGURATION DEMO ========== -->
+        <div class="system-card">
+            <h2><i class="fas fa-sliders-h"></i> ⚙️ System Configuration (Demo)</h2>
+            <p style="color:#888; margin-bottom: 20px;">Configurable settings for embed colors, limits, and channels.</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div><strong>Approve Color:</strong> <span style="color:#48bb78;">#48bb78</span></div>
+                <div><strong>Reject Color:</strong> <span style="color:#f56565;">#f56565</span></div>
+                <div><strong>Pending Color:</strong> <span style="color:#cd7f32;">#cd7f32</span></div>
+                <div><strong>Info Color:</strong> <span style="color:#5865F2;">#5865F2</span></div>
+                <div><strong>Leaderboard Color:</strong> <span style="color:#ffd700;">#ffd700</span></div>
+                <div><strong>Max Images/Request:</strong> 3</div>
+                <div><strong>Update Interval:</strong> 60 seconds</div>
+            </div>
+            
+            <hr>
+            
+            <h3><i class="fas fa-user-shield"></i> Role Management</h3>
+            <table class="table">
+                <thead><tr><th>Role Name</th><th>Role ID</th><th>Type</th></tr></thead>
+                <tbody>
+                    <tr><td>Admin Role</td><td>1503609455466643547</td><td><span class="status-badge status-approved">Admin</span></td></tr>
+                    <tr><td>Owner Role</td><td>1504646932243546152</td><td><span class="status-badge status-pending">Owner</span></td></tr>
+                    <tr><td>GP Submitter Role</td><td>1503193408280330400</td><td><span class="status-badge status-approved">Submit Permission</span></td></tr>
+                </tbody>
+            </table>
+            
+            <hr>
+            
+            <h3><i class="fas fa-hashtag"></i> Channel Configuration</h3>
+            <table class="table">
+                <thead><tr><th>Channel Name</th><th>Channel ID (Demo)</th></tr></thead>
+                <tbody>
+                    <tr><td>📤 Leave Logs</td><td>123456789012345678</td></tr>
+                    <tr><td>💎 GP Requests</td><td>123456789012345678</td></tr>
+                    <tr><td>✅ GP Processed</td><td>123456789012345678</td></tr>
+                    <tr><td>🔐 Login Logs</td><td>123456789012345678</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ========== OAuth INFORMATION ========== -->
+        <div class="system-card">
+            <h2><i class="fas fa-key"></i> 🔑 OAuth Integration</h2>
+            <p style="color:#888; margin-bottom: 15px;">This app uses OAuth 2.0 to securely connect Discord and Roblox accounts.</p>
+            
+            <div style="background: #0f0f0f; border-radius: 12px; padding: 20px;">
+                <h3 style="color: #5865F2;"><i class="fab fa-discord"></i> Discord OAuth</h3>
+                <p style="margin-bottom: 15px;">Users authenticate via Discord to verify their server membership.</p>
+                <code style="background:#000; padding:10px; display:block; border-radius:8px; font-size:12px;">
+                    Scope: identify, guilds<br>
+                    Redirect URI: https://corleonecity.github.io/SwordArtOnline/
+                </code>
+                
+                <h3 style="color: #fff; margin-top: 20px;"><i class="fas fa-gamepad"></i> Roblox OAuth</h3>
+                <p style="margin-bottom: 15px;">After Discord login, users link their Roblox account to earn GP.</p>
+                <code style="background:#000; padding:10px; display:block; border-radius:8px; font-size:12px;">
+                    Scope: openid, profile<br>
+                    Redirect URI: https://corleonecity.github.io/SwordArtOnline/<br>
+                    Client ID: 1529843549493669743
+                </code>
+            </div>
+            
+            <div class="info-box" style="margin-top: 20px; background: #1a1a2e;">
+                <i class="fas fa-info-circle" style="color: #5865F2; font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                <p><strong>How the OAuth Flow Works:</strong></p>
+                <p style="font-size: 13px; color: #aaa; margin-top: 10px;">
+                    1. User clicks "Login with Discord" → Discord OAuth → Returns user data<br>
+                    2. User clicks "Connect Roblox" → Roblox OAuth → Returns Roblox user data<br>
+                    3. System links both accounts and stores GP balance in Firebase<br>
+                    4. User can submit GP donation requests with screenshot proof
+                </p>
+            </div>
+        </div>
+
+        <!-- ========== FOOTER ========== -->
+        <div class="footer">
+            <p><i class="fas fa-shield-alt"></i> Colin Verify System – Roblox OAuth Integration</p>
+            <p style="margin-top: 10px;">This page is for Roblox OAuth review purposes only. No login required.</p>
+            <p>© 2025 | <a href="https://corleonecity.github.io/SwordArtOnline/privacy.html" style="color:#5865F2;">Privacy Policy</a> | <a href="https://corleonecity.github.io/SwordArtOnline/terms.html" style="color:#5865F2;">Terms of Service</a></p>
+        </div>
+    </div>
+
+</body>
+</html>
