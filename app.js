@@ -1,4 +1,190 @@
 // ==========================================
+// 0. REVIEW / DEMO MODUS (für Roblox OAuth Review)
+// ==========================================
+
+const urlParams = new URLSearchParams(window.location.search);
+const isReviewMode = urlParams.get('review') === 'true';
+
+if (isReviewMode) {
+    console.log("🔍 REVIEW MODE AKTIVIERT – Demo-Ansicht für Roblox OAuth");
+    
+    // Warte bis DOM geladen ist
+    document.addEventListener('DOMContentLoaded', () => {
+        // Login-Container ausblenden, Demo anzeigen
+        const loginPage = document.getElementById('loginPage');
+        const noPermissionPage = document.getElementById('noPermissionPage');
+        const robloxPage = document.getElementById('robloxPage');
+        const mainContent = document.getElementById('mainContent');
+        
+        if (loginPage) loginPage.classList.add('hidden');
+        if (noPermissionPage) noPermissionPage.classList.add('hidden');
+        if (robloxPage) robloxPage.classList.add('hidden');
+        if (mainContent) mainContent.classList.remove('hidden');
+        
+        // Demo-Benutzer erstellen
+        currentUser = {
+            id: 'review_demo_user',
+            username: 'reviewer',
+            global_name: 'OAuth Review Demo',
+            avatar: null
+        };
+        
+        // Demo-Daten anzeigen
+        const userWelcome = document.getElementById('userWelcome');
+        const userAvatar = document.getElementById('userAvatar');
+        if (userWelcome) userWelcome.textContent = 'Hi, OAuth Reviewer';
+        if (userAvatar) userAvatar.src = 'https://cdn.discordapp.com/embed/avatars/0.png';
+        
+        // Demo-Daten für Leaderboard
+        allUsersData = {
+            demo1: { discordName: 'DemoUser1', discordUsername: 'demo1', robloxName: 'RobloxPlayer1', robloxUsername: 'roblox1', totalGP: 12500 },
+            demo2: { discordName: 'DemoUser2', discordUsername: 'demo2', robloxName: 'RobloxPlayer2', robloxUsername: 'roblox2', totalGP: 8700 },
+            demo3: { discordName: 'DemoUser3', discordUsername: 'demo3', robloxName: 'RobloxPlayer3', robloxUsername: 'roblox3', totalGP: 5300 }
+        };
+        
+        renderLeaderboard('');
+        
+        // Demo-Historie für Profil
+        const profileBody = document.getElementById('profileHistoryBody');
+        if (profileBody) {
+            profileBody.innerHTML = `
+                <tr><td>01.01.2025</td><td style="color:#48bb78;">+500 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td>Demo Admin</td></tr>
+                <tr><td>15.12.2024</td><td style="color:#48bb78;">+1200 GP</td><td><span class="status-badge status-approved">Approved ✅</span></td><td>Demo Admin</td></tr>
+                <tr><td>01.12.2024</td><td style="color:#f56565;">+300 GP</td><td><span class="status-badge status-rejected">Rejected ❌</span></td><td>Missing proof</td></tr>
+            `;
+        }
+        
+        // Demo Total GP
+        const totalGpStat = document.getElementById('totalGpStat');
+        if (totalGpStat) totalGpStat.textContent = '26500';
+        
+        // Demo Pending Requests (Admin Panel Demo)
+        const adminBody = document.getElementById('adminPendingBody');
+        if (adminBody) {
+            adminBody.innerHTML = `
+                <tr>
+                    <td><div class="user-name-cell"><span class="display-name">DemoUser</span><span class="username-handle">@demouser</span></div></td>
+                    <td><div class="user-name-cell"><span class="display-name">RobloxPlayer</span><span class="username-handle">@robloxplayer</span></div></td>
+                    <td style="color:#cd7f32; font-weight:bold;">+2500 GP</td>
+                    <td><div style="display:flex; gap:5px;"><button class="btn-small btn-approve" disabled>✅ Approve</button><button class="btn-small btn-deny" disabled>❌ Reject</button></div></td>
+                </tr>
+                <tr>
+                    <td><div class="user-name-cell"><span class="display-name">TestUser</span><span class="username-handle">@testuser</span></div></td>
+                    <td><div class="user-name-cell"><span class="display-name">RobloxTester</span><span class="username-handle">@robloxtester</span></div></td>
+                    <td style="color:#cd7f32; font-weight:bold;">+1000 GP</td>
+                    <td><div style="display:flex; gap:5px;"><button class="btn-small btn-approve" disabled>✅ Approve</button><button class="btn-small btn-deny" disabled>❌ Reject</button></div></td>
+                </tr>
+            `;
+        }
+        
+        // Demo Admin & Owner Tabs anzeigen (für vollständigen Review)
+        const tabBtnAdmin = document.getElementById('tabBtnAdmin');
+        const tabBtnOwner = document.getElementById('tabBtnOwner');
+        if (tabBtnAdmin) tabBtnAdmin.style.display = 'flex';
+        if (tabBtnOwner) tabBtnOwner.style.display = 'flex';
+        
+        // Demo Rollenliste
+        const adminRolesContainer = document.getElementById('adminRolesList');
+        if (adminRolesContainer) {
+            adminRolesContainer.innerHTML = `
+                <table class="table"><thead><tr><th>Role Name</th><th>Role ID</th><th>Type</th><th>Action</th></tr></thead><tbody>
+                <tr><td class="role-name">Admin Role (Demo)</td><td class="role-id">1503609455466643547</td><td><span class="status-badge status-approved">Admin</span></td><td><button class="btn-small btn-remove-role" disabled>Remove</button></td></tr>
+                <tr><td class="role-name">Owner Role (Demo)</td><td class="role-id">1504646932243546152</td><td><span class="status-badge status-pending">Owner</span></td><td><button class="btn-small btn-remove-role" disabled>Remove</button></td></tr>
+                </tbody></table>
+            `;
+        }
+        
+        // Demo Channel Config
+        const channelConfigContainer = document.getElementById('channelConfigList');
+        if (channelConfigContainer) {
+            channelConfigContainer.innerHTML = `
+                <div class="channel-config-item"><div class="channel-config-name">📤 Leave Logs Channel</div><div class="channel-config-description">Channel for user leave notifications</div><div class="channel-config-input"><input type="text" value="123456789" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
+                <div class="channel-config-item"><div class="channel-config-name">💎 GP Requests Channel</div><div class="channel-config-description">Channel for new GP donation requests</div><div class="channel-config-input"><input type="text" value="123456789" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
+                <div class="channel-config-item"><div class="channel-config-name">✅ GP Processed Channel</div><div class="channel-config-description">Channel for approved/rejected GP requests</div><div class="channel-config-input"><input type="text" value="123456789" placeholder="Enter Discord Channel ID" disabled><span>Channel ID (Demo)</span></div></div>
+            `;
+        }
+        
+        // Demo Kick Logs
+        const kickLogsBody = document.getElementById('kickLogsBody');
+        if (kickLogsBody) {
+            kickLogsBody.innerHTML = `
+                <tr><td>01.01.2025 12:00</td><td><code>123456789</code><br>DemoUser</td><td><code>987654321</code><br>AdminUser</td><td>Rule violation</td><td>✅ Yes</td></tr>
+            `;
+        }
+        
+        // Demo Saved Messages
+        const savedMessagesContainer = document.getElementById('savedMessagesList');
+        if (savedMessagesContainer) {
+            savedMessagesContainer.innerHTML = `
+                <div class="saved-message-item"><div class="message-name">📝 Welcome Message (Demo)</div><div class="message-channel">📡 Channel ID: 123456789</div><div class="message-preview"><strong>Message:</strong> Welcome to the server! Please read the rules.</div><div class="message-actions"><button class="btn-edit-message" disabled>✏️ Edit</button><button class="btn-send-message" disabled>📤 Send / Update</button><button class="btn-delete-message" disabled>🗑️ Delete</button></div></div>
+            `;
+        }
+        
+        // Demo System Config Werte setzen
+        const colorApprove = document.getElementById('colorApprove');
+        const colorReject = document.getElementById('colorReject');
+        const colorPending = document.getElementById('colorPending');
+        const colorInfo = document.getElementById('colorInfo');
+        const colorLeaderboard = document.getElementById('colorLeaderboard');
+        const maxImages = document.getElementById('maxImagesPerRequest');
+        const musicUrl = document.getElementById('loginMusicUrl');
+        const updateInterval = document.getElementById('updateInterval');
+        const gpSubmitRole = document.getElementById('gpSubmitRoleId');
+        
+        if (colorApprove) colorApprove.value = '#48bb78';
+        if (colorReject) colorReject.value = '#f56565';
+        if (colorPending) colorPending.value = '#cd7f32';
+        if (colorInfo) colorInfo.value = '#5865F2';
+        if (colorLeaderboard) colorLeaderboard.value = '#ffd700';
+        if (maxImages) maxImages.value = '3';
+        if (musicUrl) musicUrl.value = 'https://www.youtube.com/embed/BtEkzZoUCpw?autoplay=1&loop=1';
+        if (updateInterval) updateInterval.value = '60';
+        if (gpSubmitRole) gpSubmitRole.value = '1503193408280330400';
+        
+        // Demo Stat Total Users
+        const statTotalUsers = document.getElementById('statTotalUsers');
+        if (statTotalUsers) statTotalUsers.textContent = '42';
+        
+        // Demo GP Submit Card anzeigen (aber Buttons disabled)
+        const gpSubmitCard = document.getElementById('gpSubmitCard');
+        if (gpSubmitCard) gpSubmitCard.classList.remove('hidden');
+        const addGPBtn = document.getElementById('addGPBtn');
+        if (addGPBtn) {
+            addGPBtn.disabled = true;
+            addGPBtn.title = 'Deaktiviert im Review-Modus';
+        }
+        const gpAmount = document.getElementById('gpAmount');
+        if (gpAmount) gpAmount.disabled = true;
+        const proofImage = document.getElementById('proofImage');
+        if (proofImage) proofImage.disabled = true;
+        
+        // Review Mode Hinweis anzeigen (als Notification)
+        showNotify("🔍 REVIEW MODE – Demo-Ansicht für Roblox OAuth, keine echten Änderungen möglich", "warning");
+        
+        // Alle Buttons die Schreiboperationen machen deaktivieren
+        const allButtons = document.querySelectorAll('button');
+        allButtons.forEach(btn => {
+            if (btn.id !== 'discordLoginBtn' && btn.id !== 'robloxLoginBtn') {
+                // Nur Login-Buttons lassen wir aktiv (die werden aber ausgeblendet)
+                btn.disabled = true;
+                btn.style.opacity = '0.6';
+                btn.style.cursor = 'not-allowed';
+            }
+        });
+        
+        // Tabs funktionsfähig lassen (nur zur Ansicht)
+        const tabBtns = document.querySelectorAll('.nav-tab');
+        tabBtns.forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        });
+        
+        console.log("✅ Review Mode vollständig initialisiert – Seite ist für Roblox OAuth Review bereit");
+    });
+}
+
+// ==========================================
 // 1. SETTINGS & CONFIGURATION
 // ==========================================
 
@@ -83,7 +269,7 @@ const ROLE_CACHE_TTL = 60000; // 1 minute cache
 // ==========================================
 
 function saveSession(user) {
-    if (user) {
+    if (user && !isReviewMode) {
         const sessionData = {
             user: user,
             savedAt: Date.now(),
@@ -95,6 +281,7 @@ function saveSession(user) {
 }
 
 function loadSession() {
+    if (isReviewMode) return null;
     try {
         const saved = localStorage.getItem(SESSION_KEY);
         if (!saved) return null;
@@ -137,6 +324,7 @@ function clearSession() {
 // ==========================================
 
 async function loadRoleConfig() {
+    if (isReviewMode) return;
     try {
         const rolesRef = ref(db, 'config/admin_roles');
         const snap = await get(rolesRef);
@@ -151,6 +339,7 @@ async function loadRoleConfig() {
 }
 
 async function getChannelConfig() {
+    if (isReviewMode) return {};
     try {
         const configRef = ref(db, 'config/channels');
         const snap = await get(configRef);
@@ -162,6 +351,7 @@ async function getChannelConfig() {
 }
 
 async function loadSystemConfig() {
+    if (isReviewMode) return;
     try {
         const configRef = ref(db, 'config/system');
         const snap = await get(configRef);
@@ -179,6 +369,7 @@ async function loadSystemConfig() {
 }
 
 async function loadTestMode() {
+    if (isReviewMode) return;
     try {
         const testRef = ref(db, 'config/testMode');
         const snap = await get(testRef);
@@ -192,6 +383,7 @@ async function loadTestMode() {
 }
 
 async function loadMaintenanceStatus() {
+    if (isReviewMode) return;
     try {
         const maintenanceRef = ref(db, 'config/maintenance');
         const snap = await get(maintenanceRef);
@@ -229,6 +421,7 @@ function updateTestModeIndicator() {
 // ==========================================
 
 function playLoginMusic() {
+    if (isReviewMode) return;
     const ac = document.getElementById('audioPlayerContainer');
     if (ac && ac.innerHTML === '') {
         ac.innerHTML = `<iframe width="0" height="0" src="${systemConfig.musicUrl}" frameborder="0" allow="autoplay"></iframe>`;
@@ -249,6 +442,7 @@ function showNotify(msg, type) {
 }
 
 function showLoading(show, elementId = null) {
+    if (isReviewMode) return;
     if (elementId) {
         const element = document.getElementById(elementId);
         if (element) {
@@ -284,6 +478,7 @@ function switchTab(tabName) {
 }
 
 function forceKickUser() {
+    if (isReviewMode) return;
     if (liveCheckInterval) clearInterval(liveCheckInterval);
     if (roleSyncInterval) clearInterval(roleSyncInterval);
     clearSession();
@@ -307,7 +502,7 @@ function forceKickUser() {
 // ==========================================
 
 async function fetchUserRolesFresh(userId) {
-    if (!userId || !BACKEND_URL) {
+    if (isReviewMode || !userId || !BACKEND_URL) {
         userGuildRoles = [];
         return [];
     }
@@ -339,6 +534,7 @@ async function fetchUserRolesFresh(userId) {
 }
 
 async function fetchUserRoles(userId, forceFresh = false) {
+    if (isReviewMode) return [];
     if (forceFresh || !cachedUserRoles || (Date.now() - cachedUserRolesTime) > ROLE_CACHE_TTL) {
         return fetchUserRolesFresh(userId);
     }
@@ -347,6 +543,7 @@ async function fetchUserRoles(userId, forceFresh = false) {
 }
 
 async function hasAdminPermissionLive() {
+    if (isReviewMode) return true; // Im Review-Mode Admin-Zugriff für Demo
     if (!currentUser) return false;
     if (currentUser.id === OWNER_USER_ID) return true;
     await fetchUserRoles(currentUser.id, true);
@@ -354,6 +551,7 @@ async function hasAdminPermissionLive() {
 }
 
 async function hasOwnerPermissionLive() {
+    if (isReviewMode) return true; // Im Review-Mode Owner-Zugriff für Demo
     if (!currentUser) return false;
     if (currentUser.id === OWNER_USER_ID) return true;
     await fetchUserRoles(currentUser.id, true);
@@ -361,23 +559,27 @@ async function hasOwnerPermissionLive() {
 }
 
 async function hasGpSubmitPermissionLive() {
+    if (isReviewMode) return false; // Im Review-Mode kein Submit
     await fetchUserRoles(currentUser.id, true);
     return userGuildRoles.includes(GP_SUBMIT_ROLE);
 }
 
 function hasAdminPermission() {
+    if (isReviewMode) return true;
     if (!currentUser) return false;
     if (currentUser.id === OWNER_USER_ID) return true;
     return userGuildRoles.some(role => ADMIN_ROLES.includes(role));
 }
 
 function hasOwnerPermission() {
+    if (isReviewMode) return true;
     if (!currentUser) return false;
     if (currentUser.id === OWNER_USER_ID) return true;
     return userGuildRoles.some(role => OWNER_ROLES.includes(role));
 }
 
 function hasGpSubmitPermission() {
+    if (isReviewMode) return false;
     return userGuildRoles.includes(GP_SUBMIT_ROLE);
 }
 
@@ -440,6 +642,7 @@ async function fetchRoleName(roleId) {
 // ==========================================
 
 async function sendDiscordMessage(channelId, content, embeds = null) {
+    if (isReviewMode) return true;
     if (!channelId) {
         console.warn("No channel ID provided");
         return false;
@@ -465,6 +668,7 @@ async function sendDiscordMessage(channelId, content, embeds = null) {
 }
 
 async function updateBotStatus() {
+    if (isReviewMode) return;
     try {
         const totalGP = Object.values(allUsersData).reduce((sum, u) => sum + (u.totalGP || 0), 0);
         await fetch(`${BACKEND_URL}/update-status`, {
@@ -478,6 +682,7 @@ async function updateBotStatus() {
 }
 
 async function updateDiscordNickname(userId, robloxName, robloxUsername) {
+    if (isReviewMode) return true;
     try {
         let newNickname;
         
@@ -533,6 +738,7 @@ async function updateDiscordNickname(userId, robloxName, robloxUsername) {
 }
 
 async function sendLoginToDiscord(userData) {
+    if (isReviewMode) return true;
     const channels = await getChannelConfig();
     const loginLogsChannel = channels.CH_LOGIN_LOGS;
     
@@ -558,6 +764,7 @@ async function sendLoginToDiscord(userData) {
 }
 
 async function sendGPRequestToDiscord(requestData, images) {
+    if (isReviewMode) return true;
     const formData = new FormData();
     
     const adminRoleId = ADMIN_ROLES[0] || '1503609455466643547';
@@ -652,6 +859,7 @@ async function sendGPRequestToDiscord(requestData, images) {
 // ==========================================
 
 async function doLiveCheck() {
+    if (isReviewMode) return true;
     if (!currentUser) return false;
     
     try {
@@ -707,11 +915,13 @@ async function doLiveCheck() {
 }
 
 function startLiveMemberCheck() {
+    if (isReviewMode) return;
     if (liveCheckInterval) clearInterval(liveCheckInterval);
     liveCheckInterval = setInterval(doLiveCheck, 300000);
 }
 
 function startRoleSync() {
+    if (isReviewMode) return;
     if (roleSyncInterval) clearInterval(roleSyncInterval);
     roleSyncInterval = setInterval(async () => {
         if (currentUser) {
@@ -738,6 +948,7 @@ function startRoleSync() {
 }
 
 async function sendLoginWebhook(userData) {
+    if (isReviewMode) return;
     const userRef = ref(db, `users/${userData.userId}`);
     const snap = await get(userRef);
     
@@ -752,6 +963,10 @@ async function sendLoginWebhook(userData) {
 }
 
 async function handleDiscordLogin(code) {
+    if (isReviewMode) {
+        showNotify("Review Mode: Login ist deaktiviert", "warning");
+        return;
+    }
     try {
         showLoading(true, 'discordLoginBtn');
         
@@ -785,6 +1000,10 @@ async function handleDiscordLogin(code) {
 }
 
 async function handleRobloxLogin(code) {
+    if (isReviewMode) {
+        showNotify("Review Mode: Roblox-Link ist deaktiviert", "warning");
+        return;
+    }
     try {
         showLoading(true, 'robloxLoginBtn');
         
@@ -887,6 +1106,7 @@ async function handleRobloxLogin(code) {
 }
 
 async function validateSessionOnStart() {
+    if (isReviewMode) return;
     if (isCheckingSession) return;
     isCheckingSession = true;
     
@@ -916,6 +1136,7 @@ async function validateSessionOnStart() {
 }
 
 async function checkRobloxLink() {
+    if (isReviewMode) return;
     try {
         const isStillMember = await doLiveCheck();
         if (!isStillMember) return;
@@ -1003,24 +1224,28 @@ async function showDashboard() {
     
     updatePermissions();
     
-    loadLeaderboard();
-    loadProfileHistory();
+    if (!isReviewMode) {
+        loadLeaderboard();
+        loadProfileHistory();
+    }
     
     if (hasAdminPermission()) {
-        loadAdminData();
+        if (!isReviewMode) loadAdminData();
     }
     
     if (hasOwnerPermission()) {
-        loadAdminRolesList();
-        loadChannelConfigUI();
-        loadKickLogs();
-        loadSavedMessages();
-        loadSystemConfigUI();
-        loadRegisteredUsersCount();
+        if (!isReviewMode) {
+            loadAdminRolesList();
+            loadChannelConfigUI();
+            loadKickLogs();
+            loadSavedMessages();
+            loadSystemConfigUI();
+            loadRegisteredUsersCount();
+        }
     }
     
-    updateBotStatus();
-    setInterval(updateBotStatus, 60000);
+    if (!isReviewMode) updateBotStatus();
+    if (!isReviewMode) setInterval(updateBotStatus, 60000);
 }
 
 function renderLeaderboard(filterText) {
@@ -1065,6 +1290,7 @@ function renderLeaderboard(filterText) {
 }
 
 function loadLeaderboard() {
+    if (isReviewMode) return;
     const usersRef = ref(db, 'users');
     onValue(usersRef, (snapshot) => {
         allUsersData = snapshot.val();
@@ -1075,6 +1301,7 @@ function loadLeaderboard() {
 }
 
 function loadProfileHistory() {
+    if (isReviewMode) return;
     const requestsRef = ref(db, 'requests');
     onValue(requestsRef, (snapshot) => {
         const data = snapshot.val();
@@ -1130,6 +1357,13 @@ function initClipboardButton() {
     
     // Klick auf die Fläche = Fokus setzen
     pasteArea.addEventListener('click', () => {
+        if (isReviewMode) {
+            if (statusEl) {
+                statusEl.textContent = '🔍 Review Mode: Einfügen deaktiviert';
+                statusEl.style.color = '#ffd700';
+            }
+            return;
+        }
         pasteArea.focus();
         pasteArea.style.borderColor = '#48bb78';
         if (statusEl) {
@@ -1147,6 +1381,14 @@ function initClipboardButton() {
     
     // Globales Paste Event - funktioniert immer
     document.addEventListener('paste', (event) => {
+        if (isReviewMode) {
+            if (statusEl) {
+                statusEl.textContent = '🔍 Review Mode: Einfügen deaktiviert';
+                statusEl.style.color = '#ffd700';
+                setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 2000);
+            }
+            return;
+        }
         // Prüfen ob die PasteArea fokussiert ist ODER der Button vorher geklickt wurde
         const isPasteAreaFocused = document.activeElement === pasteArea;
         
@@ -1250,6 +1492,10 @@ function updateImagePreviews() {
 // ==========================================
 
 async function submitGPRequest() {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: GP Submit ist deaktiviert", "warning");
+        return;
+    }
     const hasPermission = await hasGpSubmitPermissionLive();
     if (!hasPermission) {
         showNotify("You don't have permission to submit GP requests!", "error");
@@ -1356,6 +1602,7 @@ async function submitGPRequest() {
 // ==========================================
 
 function loadAdminData() {
+    if (isReviewMode) return;
     const requestsRef = ref(db, 'requests');
     onValue(requestsRef, (snapshot) => {
         const data = snapshot.val();
@@ -1413,6 +1660,10 @@ function loadAdminData() {
 }
 
 window.handleAdminAction = async (reqId, userId, amount, action, passedDbKey, robloxId, discordName, discordUsername, robloxName, robloxUsername) => {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Admin-Aktionen sind deaktiviert", "warning");
+        return;
+    }
     const commentInput = document.getElementById(`comment_${reqId}`);
     const adminComment = commentInput ? commentInput.value.trim() : '';
     
@@ -1554,12 +1805,12 @@ async function loadAdminRolesList() {
         
         for (const role of ADMIN_ROLES) {
             const roleName = await fetchRoleName(role);
-            html += `<tr><td class="role-name">${escapeHtml(roleName)}</td><td class="role-id">${escapeHtml(role)}</td><td><span class="status-badge status-approved">Admin</span></td><td><button class="btn-small btn-remove-role" onclick="removeAdminRole('${role}')">Remove</button></td></tr>`;
+            html += `<tr><td class="role-name">${escapeHtml(roleName)}</td><td class="role-id">${escapeHtml(role)}</td><td><span class="status-badge status-approved">Admin</span></td><td><button class="btn-small btn-remove-role" ${isReviewMode ? 'disabled' : ''} onclick="removeAdminRole('${role}')">Remove</button></td></tr>`;
         }
         
         for (const role of OWNER_ROLES) {
             const roleName = await fetchRoleName(role);
-            html += `<tr><td class="role-name">${escapeHtml(roleName)}</td><td class="role-id">${escapeHtml(role)}</td><td><span class="status-badge status-pending">Owner</span></td><td><button class="btn-small btn-remove-role" onclick="removeOwnerRole('${role}')">Remove</button></td></tr>`;
+            html += `<tr><td class="role-name">${escapeHtml(roleName)}</td><td class="role-id">${escapeHtml(role)}</td><td><span class="status-badge status-pending">Owner</span></td><td><button class="btn-small btn-remove-role" ${isReviewMode ? 'disabled' : ''} onclick="removeOwnerRole('${role}')">Remove</button></td></tr>`;
         }
         
         html += '</tbody></table>';
@@ -1571,6 +1822,10 @@ async function loadAdminRolesList() {
 }
 
 window.addAdminRole = async () => {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Rollenänderungen sind deaktiviert", "warning");
+        return;
+    }
     const roleId = document.getElementById('newRoleId')?.value.trim();
     const permissionLevel = document.getElementById('rolePermissionLevel')?.value;
     
@@ -1607,6 +1862,10 @@ window.addAdminRole = async () => {
 };
 
 window.removeAdminRole = async (roleId) => {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Rollenänderungen sind deaktiviert", "warning");
+        return;
+    }
     const index = ADMIN_ROLES.indexOf(roleId);
     if (index !== -1) {
         ADMIN_ROLES.splice(index, 1);
@@ -1621,6 +1880,10 @@ window.removeAdminRole = async (roleId) => {
 };
 
 window.removeOwnerRole = async (roleId) => {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Rollenänderungen sind deaktiviert", "warning");
+        return;
+    }
     const index = OWNER_ROLES.indexOf(roleId);
     if (index !== -1) {
         OWNER_ROLES.splice(index, 1);
@@ -1657,7 +1920,7 @@ async function loadChannelConfigUI() {
             <div class="channel-config-name">${ch.name}</div>
             <div class="channel-config-description">${ch.description}</div>
             <div class="channel-config-input">
-                <input type="text" id="cfg_${ch.key}" value="${channelConfig[ch.key] || ''}" placeholder="Enter Discord Channel ID">
+                <input type="text" id="cfg_${ch.key}" value="${channelConfig[ch.key] || ''}" placeholder="Enter Discord Channel ID" ${isReviewMode ? 'disabled' : ''}>
                 <span>Channel ID</span>
             </div>
         </div>
@@ -1665,6 +1928,10 @@ async function loadChannelConfigUI() {
 }
 
 async function saveChannelConfig() {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Channel-Konfiguration ist deaktiviert", "warning");
+        return;
+    }
     const channels = [
         'CH_LEAVE_LOGS', 'CH_USER_INFO', 'CH_PANEL_INFO', 'CH_LEADERBOARD',
         'CH_TRIGGER_BTN', 'CH_GP_REQUESTS', 'CH_GP_PROCESSED', 'CH_LOGIN_LOGS', 'CH_BOT_DM_LOGS'
@@ -1713,6 +1980,7 @@ async function saveChannelConfig() {
 }
 
 async function loadKickLogs() {
+    if (isReviewMode) return;
     const logsRef = ref(db, 'logs/kicks');
     onValue(logsRef, (snapshot) => {
         const data = snapshot.val();
@@ -1721,7 +1989,7 @@ async function loadKickLogs() {
         
         body.innerHTML = '';
         if (!data) {
-            body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#666;">No kick logs found</td></tr>';
+            body.innerHTML = '</tr><td colspan="5" style="text-align:center; color:#666;">No kick logs found</td></tr>';
             return;
         }
         
@@ -1743,6 +2011,10 @@ async function loadKickLogs() {
 }
 
 async function setMaintenanceMode(enabled) {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Wartungsmodus ist deaktiviert", "warning");
+        return;
+    }
     try {
         await set(ref(db, 'config/maintenance'), { enabled });
         if (enabled) {
@@ -1765,6 +2037,10 @@ async function setMaintenanceMode(enabled) {
 }
 
 async function setTestMode(enabled) {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Testmodus ist deaktiviert", "warning");
+        return;
+    }
     try {
         await set(ref(db, 'config/testMode'), { enabled });
         testModeEnabled = enabled;
@@ -1777,6 +2053,11 @@ async function setTestMode(enabled) {
 }
 
 async function loadRegisteredUsersCount() {
+    if (isReviewMode) {
+        const statTotalUsers = document.getElementById('statTotalUsers');
+        if (statTotalUsers) statTotalUsers.textContent = '42';
+        return;
+    }
     try {
         const usersSnap = await get(ref(db, 'users'));
         const users = usersSnap.val() || {};
@@ -1814,6 +2095,10 @@ function loadSystemConfigUI() {
 }
 
 async function saveSystemConfig() {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: System-Konfiguration ist deaktiviert", "warning");
+        return;
+    }
     const newConfig = {
         embedColors: {
             approve: document.getElementById('colorApprove')?.value || '#48bb78',
@@ -1843,6 +2128,10 @@ async function saveSystemConfig() {
 }
 
 async function saveGpSubmitRole() {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: GP Submit Rolle ist deaktiviert", "warning");
+        return;
+    }
     const newRoleId = document.getElementById('gpSubmitRoleId')?.value.trim();
     if (!newRoleId) {
         showNotify("Please enter a role ID!", "error");
@@ -1865,6 +2154,7 @@ async function saveGpSubmitRole() {
 // ==========================================
 
 async function loadSavedMessages() {
+    if (isReviewMode) return;
     const messagesRef = ref(db, 'saved_messages');
     onValue(messagesRef, (snapshot) => {
         const data = snapshot.val();
@@ -1905,6 +2195,10 @@ async function loadSavedMessages() {
 }
 
 window.editSavedMessage = async (id) => {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Nachrichten-Bearbeitung ist deaktiviert", "warning");
+        return;
+    }
     const snap = await get(ref(db, `saved_messages/${id}`));
     const msg = snap.val();
     if (!msg) return;
@@ -1935,6 +2229,10 @@ window.editSavedMessage = async (id) => {
 };
 
 async function saveMessage() {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Nachrichten-Speichern ist deaktiviert", "warning");
+        return;
+    }
     const name = document.getElementById('messageName')?.value.trim();
     const channelId = document.getElementById('messageChannelId')?.value.trim();
     const content = document.getElementById('messageContent')?.value;
@@ -2007,6 +2305,10 @@ async function saveMessage() {
 }
 
 window.sendSavedMessage = async (id) => {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Nachrichten-Senden ist deaktiviert", "warning");
+        return;
+    }
     const snap = await get(ref(db, `saved_messages/${id}`));
     const msg = snap.val();
     if (!msg) return;
@@ -2092,6 +2394,10 @@ window.sendSavedMessage = async (id) => {
 };
 
 window.deleteSavedMessage = async (id) => {
+    if (isReviewMode) {
+        showNotify("🔍 Review Mode: Nachrichten-Löschen ist deaktiviert", "warning");
+        return;
+    }
     if (!confirm("Are you sure you want to delete this message?")) return;
     try {
         await remove(ref(db, `saved_messages/${id}`));
@@ -2165,20 +2471,20 @@ function initEventListeners() {
     const enableMaintenanceBtn = document.getElementById('enableMaintenanceBtn');
     const disableMaintenanceBtn = document.getElementById('disableMaintenanceBtn');
     
-    if (discordLoginBtn) discordLoginBtn.addEventListener('click', () => {
+    if (discordLoginBtn && !isReviewMode) discordLoginBtn.addEventListener('click', () => {
         window.location.href = `https://discord.com/api/oauth2/authorize?client_id=${DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=identify%20guilds&state=discord`;
     });
     
-    if (robloxLoginBtn) robloxLoginBtn.addEventListener('click', () => {
+    if (robloxLoginBtn && !isReviewMode) robloxLoginBtn.addEventListener('click', () => {
         window.location.href = `https://apis.roblox.com/oauth/v1/authorize?client_id=${ROBLOX_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=code&scope=openid%20profile&state=roblox`;
     });
     
-    if (dcLogoutBtn) dcLogoutBtn.addEventListener('click', () => {
+    if (dcLogoutBtn && !isReviewMode) dcLogoutBtn.addEventListener('click', () => {
         clearSession();
         window.location.href = REDIRECT_URI;
     });
     
-    if (rbxLogoutBtn) rbxLogoutBtn.addEventListener('click', async () => {
+    if (rbxLogoutBtn && !isReviewMode) rbxLogoutBtn.addEventListener('click', async () => {
         if (!confirm("Disconnect Roblox?")) return;
         try {
             await update(ref(db, `users/${currentUser.id}`), {
@@ -2196,7 +2502,7 @@ function initEventListeners() {
         renderLeaderboard(e.target.value);
     });
     
-    if (proofImage) proofImage.addEventListener('change', (e) => {
+    if (proofImage && !isReviewMode) proofImage.addEventListener('change', (e) => {
         const newFiles = Array.from(e.target.files);
         const maxImages = systemConfig.limits.maxImagesPerRequest;
         if (selectedFiles.length + newFiles.length > maxImages) {
@@ -2208,7 +2514,7 @@ function initEventListeners() {
         e.target.value = '';
     });
     
-    if (addGPBtn) addGPBtn.addEventListener('click', submitGPRequest);
+    if (addGPBtn && !isReviewMode) addGPBtn.addEventListener('click', submitGPRequest);
     if (tabBtnSpenden) tabBtnSpenden.addEventListener('click', () => switchTab('Spenden'));
     if (tabBtnLeaderboard) tabBtnLeaderboard.addEventListener('click', () => switchTab('Leaderboard'));
     if (tabBtnProfile) tabBtnProfile.addEventListener('click', () => switchTab('Profile'));
@@ -2218,8 +2524,8 @@ function initEventListeners() {
             const hasAdmin = await hasAdminPermissionLive();
             if (hasAdmin) {
                 switchTab('Admin');
-                loadAdminData();
-            } else {
+                if (!isReviewMode) loadAdminData();
+            } else if (!isReviewMode) {
                 showNotify("You don't have permission to access Admin Panel!", "error");
                 tabBtnAdmin.style.display = 'none';
             }
@@ -2231,28 +2537,30 @@ function initEventListeners() {
             const hasOwner = await hasOwnerPermissionLive();
             if (hasOwner) {
                 switchTab('Owner');
-                loadAdminRolesList();
-                loadChannelConfigUI();
-                loadKickLogs();
-                loadSavedMessages();
-                loadSystemConfigUI();
-                loadRegisteredUsersCount();
-            } else {
+                if (!isReviewMode) {
+                    loadAdminRolesList();
+                    loadChannelConfigUI();
+                    loadKickLogs();
+                    loadSavedMessages();
+                    loadSystemConfigUI();
+                    loadRegisteredUsersCount();
+                }
+            } else if (!isReviewMode) {
                 showNotify("You don't have permission to access Owner Panel!", "error");
                 tabBtnOwner.style.display = 'none';
             }
         });
     }
     
-    if (addRoleBtn) addRoleBtn.addEventListener('click', window.addAdminRole);
-    if (saveChannelConfigBtn) saveChannelConfigBtn.addEventListener('click', saveChannelConfig);
-    if (saveSystemConfigBtn) saveSystemConfigBtn.addEventListener('click', saveSystemConfig);
-    if (saveGpSubmitRoleBtn) saveGpSubmitRoleBtn.addEventListener('click', saveGpSubmitRole);
-    if (refreshUsersBtn) refreshUsersBtn.addEventListener('click', loadRegisteredUsersCount);
-    if (enableTestModeBtn) enableTestModeBtn.addEventListener('click', () => setTestMode(true));
-    if (disableTestModeBtn) disableTestModeBtn.addEventListener('click', () => setTestMode(false));
-    if (saveMessageBtn) saveMessageBtn.addEventListener('click', saveMessage);
-    if (sendMessageBtn) sendMessageBtn.addEventListener('click', () => {
+    if (addRoleBtn && !isReviewMode) addRoleBtn.addEventListener('click', window.addAdminRole);
+    if (saveChannelConfigBtn && !isReviewMode) saveChannelConfigBtn.addEventListener('click', saveChannelConfig);
+    if (saveSystemConfigBtn && !isReviewMode) saveSystemConfigBtn.addEventListener('click', saveSystemConfig);
+    if (saveGpSubmitRoleBtn && !isReviewMode) saveGpSubmitRoleBtn.addEventListener('click', saveGpSubmitRole);
+    if (refreshUsersBtn && !isReviewMode) refreshUsersBtn.addEventListener('click', loadRegisteredUsersCount);
+    if (enableTestModeBtn && !isReviewMode) enableTestModeBtn.addEventListener('click', () => setTestMode(true));
+    if (disableTestModeBtn && !isReviewMode) disableTestModeBtn.addEventListener('click', () => setTestMode(false));
+    if (saveMessageBtn && !isReviewMode) saveMessageBtn.addEventListener('click', saveMessage);
+    if (sendMessageBtn && !isReviewMode) sendMessageBtn.addEventListener('click', () => {
         if (currentEditingMessageId) {
             sendSavedMessage(currentEditingMessageId);
         } else {
@@ -2264,9 +2572,9 @@ function initEventListeners() {
             saveMessage();
         }
     });
-    if (clearMessageFormBtn) clearMessageFormBtn.addEventListener('click', clearMessageForm);
-    if (enableMaintenanceBtn) enableMaintenanceBtn.addEventListener('click', () => setMaintenanceMode(true));
-    if (disableMaintenanceBtn) disableMaintenanceBtn.addEventListener('click', () => setMaintenanceMode(false));
+    if (clearMessageFormBtn && !isReviewMode) clearMessageFormBtn.addEventListener('click', clearMessageForm);
+    if (enableMaintenanceBtn && !isReviewMode) enableMaintenanceBtn.addEventListener('click', () => setMaintenanceMode(true));
+    if (disableMaintenanceBtn && !isReviewMode) disableMaintenanceBtn.addEventListener('click', () => setMaintenanceMode(false));
 }
 
 // ==========================================
@@ -2274,6 +2582,7 @@ function initEventListeners() {
 // ==========================================
 
 function setupSessionHandlers() {
+    if (isReviewMode) return;
     window.addEventListener('beforeunload', () => {
         if (currentUser) {
             saveSession(currentUser);
@@ -2281,7 +2590,7 @@ function setupSessionHandlers() {
     });
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && currentUser) {
+        if (!document.hidden && currentUser && !isReviewMode) {
             if (reloadTimeout) clearTimeout(reloadTimeout);
             reloadTimeout = setTimeout(() => {
                 if (!isCheckingSession) {
@@ -2299,6 +2608,8 @@ function setupSessionHandlers() {
 function init() {
     initEventListeners();
     setupSessionHandlers();
+    
+    if (isReviewMode) return;
     
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
